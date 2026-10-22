@@ -1,0 +1,50 @@
+name: Kotlin Multiplatform foundation
+on:
+  push:
+    branches:
+      - feature/kmp-platform-foundation
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  jvm-android:
+    name: Shared JVM tests and Android compilation
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK 36
+        run: sdkmanager "platforms;android-36"
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.5.0'
+      - name: Compile shared JVM and run tests
+        run: gradle --no-daemon :shared:jvmTest :shared:compileKotlinJvm --stacktrace
+      - name: Compile Android target
+        run: gradle --no-daemon :shared:compileAndroidMain --stacktrace
+
+  ios-shared-compile:
+    name: iOS simulator shared-code compilation
+    runs-on: macos-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.5.0'
+      - name: Print Xcode build environment
+        run: xcodebuild -version
+      - name: Compile native iOS simulator target (not an IPA)
+        run: gradle --no-daemon :shared:compileKotlinIosSimulatorArm64 --stacktrace
