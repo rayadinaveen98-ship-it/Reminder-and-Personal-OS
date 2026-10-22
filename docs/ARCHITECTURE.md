@@ -84,3 +84,6 @@ Local-first storage; least-privilege permissions; protected handling of sensitiv
 7. CI, macOS/Xcode access and release-signing plan.
 
 **No code has been implemented or tested by this document.**
+
+## Persisted scheduling intent
+See [Durable Persistence Contract V1](PERSISTENCE_CONTRACT_V1.md). Store explicit user actions and native schedule attempts separately; use an idempotent outbox to reconcile non-transactional OS scheduling side effects. SQLite schema is proposed and integration-tested in a standalone Python harness; Android/iOS native database integration remains pending.
