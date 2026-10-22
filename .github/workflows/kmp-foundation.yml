@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/kmp-platform-foundation
+      - feature/native-notification-preview
   pull_request:
   workflow_dispatch:
 
@@ -46,8 +47,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.5.0'
-      - name: Compile shared Android library target
-        run: gradle --no-daemon :shared:compileAndroidMain --stacktrace
+      - name: Build Android preview APK
+        run: gradle --no-daemon :shared:compileAndroidMain :androidApp:assembleDebug --stacktrace
+      - name: Upload unsigned debug preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-native-preview-debug
+          path: androidApp/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
 
   ios-shared:
     name: iOS simulator shared-code compilation
@@ -64,5 +72,25 @@ jobs:
           gradle-version: '9.5.0'
       - name: Print Xcode build environment
         run: xcodebuild -version
-      - name: Compile native iOS simulator target (not an IPA)
+      - name: Compile native iOS simulator KMP shared target
         run: gradle --no-daemon :shared:compileKotlinIosSimulatorArm64 --stacktrace
+      - name: Generate Xcode preview project
+        run: |
+          brew install xcodegen
+          cd iosApp
+          xcodegen generate
+      - name: Build iOS simulator preview (not an IPA)
+        run: |
+          xcodebuild -project iosApp/ReminderOSPreview.xcodeproj \
+            -scheme ReminderOSPreview \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath iosApp/DerivedData \
+            CODE_SIGNING_ALLOWED=NO build
+      - name: Upload iOS simulator preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-native-preview-simulator
+          path: iosApp/DerivedData/Build/Products/Debug-iphonesimulator/ReminderOSPreview.app
+          if-no-files-found: error
+          retention-days: 7
