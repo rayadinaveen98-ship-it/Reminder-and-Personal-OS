@@ -43,3 +43,6 @@ Review and validate the draft V1 requirements; complete real Gradle KMP builds a
 
 ### Durable storage research
 A [portable SQLite event + scheduling outbox contract](docs/PERSISTENCE_CONTRACT_V1.md) is being tested. It is a reference implementation and **not yet a mobile database adapter**.
+
+### Android alpha APK (developer test build)
+Android Alpha v0.2 saves multiple one-time reminders on the device and provides Done/Snooze/Skip. [CI build #39819474781](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39819474781) passed; download the `android-reminder-alpha-debug` artifact while retained. [Scope and QA instructions](docs/ANDROID_ALPHA_V0_2.md). This is not a stable release or an iOS feature-parity build.

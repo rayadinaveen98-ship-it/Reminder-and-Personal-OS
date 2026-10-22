@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/durable-event-store-v1` (stacked on native notification preview)  
-**Stage:** Native notification preview builds passed; transactional SQLite event-store/outbox prototype committed for automated validation
+**Working branch:** `feature/android-reminder-alpha-apk` (stacked on portable persistence prototype)  
+**Stage:** Android Alpha 0.2 installable debug APK compiled; on-device reliability and iOS feature parity pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -87,3 +87,13 @@ Every active work session starts with reading repo history and open branches. Co
 - Added independent `sqlite-contract` GitHub Actions job; CI outcome must be checked before claiming tests passed.
 - Documented [Durable Persistence Contract](PERSISTENCE_CONTRACT_V1.md), crash windows and physical-device validation still outstanding.
 - Production cross-platform persistence library selection (Room KMP / SQLDelight), schema migrations, native outbox executor, concurrent writes, encrypted backup and device verification remain pending.
+
+## Android functional alpha — 2026-10-22
+- Created a **separate Android alpha package** `dev.reminderos.alpha`, preserving the earlier one-alert test app.
+- Implemented persistent native SQLite one-time reminders, multiple scheduled alarms, in-app reminder list, date/time selection and Done/Skip/Snooze 10m controls.
+- Implemented per-reminder PendingIntent identity, notification actions with revision checks, an Android scheduling outbox, and recovery attempts after supported reboot/time-change events.
+- **Build verification:** [GitHub Actions #39819474781](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39819474781) passed all four jobs: Android APK, iOS simulator preview build, shared JVM and **25 SQLite reference contract tests**.
+- APK artifact: `android-reminder-alpha-debug`; source commit `9d1c9dad5eaee00b74142365bbd03d3fa6c5628d`; extracted APK SHA-256 `e404e0ad58bb83f696d9e89de0f711194c960286f4c9275be7c3aedf5cb643ab`.
+- See [Android Alpha v0.2 QA and limitations](ANDROID_ALPHA_V0_2.md). **No physical-device notification delivery has been verified.**
+- Current Android alpha persistence is separate from shared KMP/portable reference implementation. iOS remains an independent one-alert preview, not matching the Android alpha functionality.
+- **Next:** on-device test notification permission/Doze/reboot/cancel/snooze; production cross-platform persistence adapter, tested migrations, signed build continuity and feature parity.

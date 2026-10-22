@@ -60,10 +60,10 @@ jobs:
         run: gradle --no-daemon :shared:compileAndroidMain --stacktrace
       - name: Build independent Android native preview
         run: gradle -p androidApp --no-daemon assembleDebug --stacktrace
-      - name: Upload unsigned debug preview
+      - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-native-preview-debug
+          name: android-reminder-alpha-debug
           path: androidApp/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7

@@ -87,3 +87,6 @@ Local-first storage; least-privilege permissions; protected handling of sensitiv
 
 ## Persisted scheduling intent
 See [Durable Persistence Contract V1](PERSISTENCE_CONTRACT_V1.md). Store explicit user actions and native schedule attempts separately; use an idempotent outbox to reconcile non-transactional OS scheduling side effects. SQLite schema is proposed and integration-tested in a standalone Python harness; Android/iOS native database integration remains pending.
+
+## Android Alpha 0.2 bridge status
+[Android Alpha 0.2](ANDROID_ALPHA_V0_2.md) is a temporary native Android one-time reminder test application using SQLiteOpenHelper and AlarmManager. It is **not yet integrated** into shared KMP domain persistence; it must not be portrayed as a finished cross-platform feature. Device delivery and persistence migration tests remain pending.
