@@ -88,6 +88,7 @@ class MainActivity : Activity() {
                 startActivity(
                     Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
                         Uri.parse("package:" + packageName))
+                )
             })
         }
 
@@ -134,7 +135,7 @@ class MainActivity : Activity() {
             "This early build supports one-time reminders only. Notifications may be delayed by the OS. " +
                 "Overdue and unanswered reminders stay unresolved until you act.", 13f))
         setContentView(ScrollView(this).apply {
-            fillViewport = true
+            isFillViewport = true
             addView(outer)
         })
     }
