@@ -10,18 +10,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import dev.reminderos.core.AlertIntent
-import dev.reminderos.core.DeliveryCapability
-import dev.reminderos.core.NativeScheduleGateway
-import dev.reminderos.core.PlatformRegistration
-import dev.reminderos.core.PlatformScheduleResult
-import dev.reminderos.core.SchedulerCapabilities
 
 /**
  * Preview-only single-slot native adapter. Production needs transactional Room storage,
  * collision-safe OS identities and multi-occurrence reconciliation.
  */
-internal class PreviewAlarmGateway(private val context: Context) : NativeScheduleGateway {
+internal class PreviewAlarmGateway(private val context: Context) : PreviewScheduleGateway {
     private val manager: AlarmManager =
         context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
@@ -33,13 +27,13 @@ internal class PreviewAlarmGateway(private val context: Context) : NativeSchedul
     private fun exactGranted(): Boolean =
         Build.VERSION.SDK_INT < 31 || manager.canScheduleExactAlarms()
 
-    override fun capabilities(): SchedulerCapabilities = when {
-        !notificationsGranted() -> SchedulerCapabilities(
-            DeliveryCapability.NOT_AUTHORIZED, "Grant notification permission to receive visible alerts"
+    override fun capabilities(): PreviewCapabilities = when {
+        !notificationsGranted() -> PreviewCapabilities(
+            PreviewDeliveryCapability.NOT_AUTHORIZED, "Grant notification permission to receive visible alerts"
         )
-        exactGranted() -> SchedulerCapabilities(DeliveryCapability.PRECISE)
-        else -> SchedulerCapabilities(
-            DeliveryCapability.APPROXIMATE_ONLY,
+        exactGranted() -> PreviewCapabilities(PreviewDeliveryCapability.PRECISE)
+        else -> PreviewCapabilities(
+            PreviewDeliveryCapability.APPROXIMATE_ONLY,
             "Exact-alarm access is unavailable; the Android system may delay the alert"
         )
     }
@@ -52,15 +46,15 @@ internal class PreviewAlarmGateway(private val context: Context) : NativeSchedul
         )
     }
 
-    override fun schedule(intent: AlertIntent): PlatformScheduleResult {
+    override fun schedule(intent: PreviewAlert): PreviewScheduleResult {
         if (intent.occurrenceId != PREVIEW_ID) {
-            return PlatformScheduleResult.Rejected("PREVIEW_SINGLE_SLOT_ONLY")
+            return PreviewScheduleResult.Rejected("PREVIEW_SINGLE_SLOT_ONLY")
         }
         if (intent.fireAtEpochMillis <= System.currentTimeMillis()) {
-            return PlatformScheduleResult.Rejected("PAST_DUE")
+            return PreviewScheduleResult.Rejected("PAST_DUE")
         }
         if (!notificationsGranted()) {
-            return PlatformScheduleResult.Rejected("POST_NOTIFICATIONS_DENIED")
+            return PreviewScheduleResult.Rejected("POST_NOTIFICATIONS_DENIED")
         }
         return try {
             // PendingIntent remains valid if the Activity process is killed normally.
@@ -73,15 +67,15 @@ internal class PreviewAlarmGateway(private val context: Context) : NativeSchedul
                     AlarmManager.RTC_WAKEUP, intent.fireAtEpochMillis, pendingIntent()
                 )
             }
-            PlatformScheduleResult.Accepted(PREVIEW_ID)
+            PreviewScheduleResult.Accepted(PREVIEW_ID)
         } catch (e: SecurityException) {
-            PlatformScheduleResult.Rejected("EXACT_ALARM_ACCESS_CHANGED")
+            PreviewScheduleResult.Rejected("EXACT_ALARM_ACCESS_CHANGED")
         } catch (e: RuntimeException) {
-            PlatformScheduleResult.Rejected("NATIVE_SCHEDULER_ERROR")
+            PreviewScheduleResult.Rejected("NATIVE_SCHEDULER_ERROR")
         }
     }
 
-    override fun cancel(registration: PlatformRegistration): Boolean {
+    override fun cancel(registration: PreviewRegistration): Boolean {
         if (registration.occurrenceId != PREVIEW_ID || registration.platformHandle != PREVIEW_ID) {
             return false
         }
