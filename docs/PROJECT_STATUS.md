@@ -33,7 +33,7 @@
 - Added `NativeScheduleGateway` capability/result contract and guarded reconciliation executor.
 - **PASS local Kotlin CLI:** 12 additional adapter-boundary smoke checks; 65 total across three smoke suites.
 - Added GitHub Actions workflow to request JVM + Android compilation on Linux and iOS Simulator compilation on macOS.
-- **CI unverified:** Workflow configuration does not mean an Android or iOS build passed.
+- **CI started:** First run (#39803890112) stopped in Android SDK setup (`android-actions/setup-android@v3` requested obsolete `tools` package), before compilation; corrected workflow to use hosted runner SDK manager. No Android or iOS KMP compilation success verified yet.
 - Added [Native Platform Validation Plan](NATIVE_PLATFORM_VALIDATION.md) and recorded pinned candidate tooling.
 
 ## Not yet implemented or verified
