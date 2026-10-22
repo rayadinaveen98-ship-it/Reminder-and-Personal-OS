@@ -44,3 +44,7 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 | D-031 | Initial iOS preview is SwiftUI and UNUserNotificationCenter without KMP bridge | PROPOSED | Validate platform scheduling independently, integrate shared core later |
 
 **Reminder:** Accepted product goals are not claims that code is implemented. This document is updated as choices are finalized or revised.
+
+## Native preview build notes — 2026-10-22
+- D-032 (PROVISIONALLY ACCEPTED): Android test harness uses a separate standalone Gradle build because combining AGP 9's built-in Kotlin compiler with the experimental shared KMP module caused Kotlin metadata/classloader errors. This is temporary; a properly verified KMP-to-Android bridge is still required.
+- D-033 (ACCEPTED reporting principle): A compiled debug APK is not evidence that notifications arrived reliably or that a person completed a task.
