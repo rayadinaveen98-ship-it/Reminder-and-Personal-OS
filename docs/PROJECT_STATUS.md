@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `docs/v1-product-specification`  
-**Stage:** V1 product specification drafted; review and validation pending
+**Working branch:** `spike/shared-reminder-core` (based on V1 specification branch)  
+**Stage:** V1 specification drafted; platform-independent core JVM smoke spike passed; native feasibility still pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -14,9 +14,15 @@
 - Drafted [V1 Quality Gates](QUALITY_GATES_V1.md) for automated tests and Android/iOS physical-device scenarios.
 - Recorded outstanding technical/product decisions; all substantive new implementation choices remain **proposed**.
 
+## Initial technical spike — 2026-10-22
+- Added dependency-free Kotlin reminder outcome reducer, explicit user action handling, idempotency and completion/unknown-share summary.
+- **PASS:** 16 JVM smoke checks with Kotlin CLI 1.9.0 and Java 21 on Linux, using `sh scripts/run_core_smoke.sh`.
+- Added [Initial Feasibility Report](TECH_FEASIBILITY_SPIKE.md) documenting KMP/Compose/Room candidates and OS notification constraints.
+- **Limitation:** no Gradle, Android SDK or Xcode available locally; KMP Android/iOS compilation and native delivery are not tested.
+
 ## Not yet implemented or verified
-- No Android or iOS application code, scaffolding, functional reminders, trackers or analytics.
-- No automated/unit/instrumentation/device tests, builds, APK, IPA or release.
+- No Android or iOS application shell, native scheduling adapters, database, functional reminder delivery or tracking app. One isolated shared-core proof of concept exists.
+- No integrated KMP/Gradle tests, Android/iOS instrumentation or device tests, APK, IPA or release. JVM smoke passed only.
 - No finalized OS version floor, KMP UI sharing validation or persistence library decision.
 - No user approval for the V1 PRD, individual reminder defaults or visual design.
 
@@ -33,3 +39,4 @@ Every active work session starts with reading repo history and open branches. Co
 ## History
 - **2026-10-22:** Initial architecture planning docs created.
 - **2026-10-22:** V1 scope, reminder lifecycle, event/analytics model and quality gates drafted on documentation branch.
+- **2026-10-22:** Initial portable Kotlin reminder-core smoke test passed (16 JVM checks); platform feasibility report documented.
