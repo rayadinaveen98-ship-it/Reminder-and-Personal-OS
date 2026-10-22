@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/kmp-platform-foundation` (stacked on calendar/reconciliation spike)  
-**Stage:** KMP Gradle foundation and scheduling port committed; 65 local JVM smoke checks passed; native compile/device validation pending
+**Working branch:** `feature/native-notification-preview` (stacked on KMP foundation)  
+**Stage:** Native Android and iOS notification preview sources committed; app CI and physical-device validation pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -36,15 +36,23 @@
 - **CI evidence:** Initial run [#39803890112](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39803890112) passed iOS Simulator shared-code compilation but failed Android SDK setup. Corrected run [#39804136951](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39804136951) passed shared JVM tests **and Android library compilation**; iOS job was still running at last check (initial run had succeeded). Split the latest CI workflow into separate JVM/Android/iOS jobs so platform bootstrapping cannot hide JVM test results. No native notification delivery, signed app or physical-device test was performed.
 - Added [Native Platform Validation Plan](NATIVE_PLATFORM_VALIDATION.md) and recorded pinned candidate tooling.
 
+## Native notification preview — 2026-10-22
+- Created androidApp debug shell with AlarmManager single-test notification, Android permission checks, exact/inexact fallback, cancel UI and eligible reboot/time-change recovery.
+- Created iosApp SwiftUI single-test local notification shell with UNUserNotificationCenter authorization, one-shot scheduling, cancellation and foreground presentation.
+- Updated GitHub Actions to compile the Android debug APK and generate/build the Xcode iOS Simulator preview; binaries and actual notification timing must be verified through CI and device tests.
+- Documented [Native Notification Preview](NATIVE_NOTIFICATION_PREVIEW.md) limitations. iOS Swift app is not yet connected to shared Kotlin rules.
+- Prior KMP CI run #39804136951 completed Android/JVM and iOS Simulator shared-library builds successfully.
+- No complete functional reminders, tracked outcomes, historical analytics or durable multi-reminder database yet.
+
 ## Not yet implemented or verified
-- No Android or iOS application shell, native AlarmManager/UNUserNotificationCenter adapters, database, functional reminder delivery or tracking app. Shared Kotlin proof-of-concept and KMP module scaffold exist.
-- KMP Gradle/native CI results pending; no Android/iOS instrumentation or device tests, APK, IPA or release. Local JVM smoke passed.
+- Android and iOS notification preview shells exist in source; neither has verified end-to-end native delivery or user completion tracking. Production AlarmManager/UNUserNotificationCenter adapters and shared database remain pending.
+- Previous KMP shared-library CI builds passed. New Android APK and iOS Simulator preview app CI results are pending. No physical-device evidence, signed iOS IPA or release.
 - No finalized OS version floor, KMP UI sharing validation or persistence library decision.
 - No user approval for the V1 PRD, individual reminder defaults or visual design.
 
 ## Next work — in order
 1. Review and lock a small set of P0 product behaviour choices (quiet hours, follow-up defaults, recurrence edges).
-2. Validate the committed KMP Gradle compilation on CI (Android and iOS), then implement platform notification adapters and local persistence.
+2. Verify Android APK / iOS Simulator app CI builds and correct compilation failures; test local notifications on physical devices, then implement shared local persistence.
 3. Finalize module boundaries, version matrix and data migrations from the tested spike.
 4. Design main journeys and design system, then scaffold the project on an implementation branch with basic tests.
 5. Build and test reminder core before advanced analytics or optional AI.
@@ -57,4 +65,5 @@ Every active work session starts with reading repo history and open branches. Co
 - **2026-10-22:** V1 scope, reminder lifecycle, event/analytics model and quality gates drafted on documentation branch.
 - **2026-10-22:** Initial portable Kotlin reminder-core smoke test passed (16 JVM checks); platform feasibility report documented.
 - **2026-10-22:** Added calendar recurrence and OS registration reconciliation spike with 37 additional JVM checks (53 total); native delivery still untested.
-- **2026-10-22:** Added KMP target configuration, shared scheduling gateway and 12 local JVM checks (65 total); CI native compilation remains to be confirmed.
+- **2026-10-22:** Added KMP target configuration, shared scheduling gateway and 12 local JVM checks (65 total); shared Android/iOS CI compilation passed.
+- **2026-10-22:** Added native Android/iOS one-alert notification preview source and CI build targets; new app builds and device notification delivery not yet verified.
