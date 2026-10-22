@@ -56,8 +56,8 @@ fun main() {
         "monthly 29 in leap year")
     verify(runCatching { CalendarRule.Monthly(CalendarDate(2026, 1, 1), clock, 32) }.isFailure,
         "invalid month day")
-    verify(runCatching { calendarSlots(monthly31, CalendarDate(2026, 1, 1),
-        CalendarDate(2038, 1, 1), maxResults = 1000) }.isFailure, "bounded calendar horizon")
+    verify(runCatching { calendarSlots(monthly31, CalendarDate(2026, 1, 1), CalendarDate(2038, 1, 1), maxResults = 1000) }.isFailure,
+        "bounded calendar horizon")
 
     val x = AlertIntent("a", 1_000, 1)
     val y = AlertIntent("b", 2_000, 1)
