@@ -70,6 +70,7 @@ Local-first storage; least-privilege permissions; protected handling of sensitiv
 - [Reminder Behaviour Contract](REMINDER_BEHAVIOR_V1.md)
 - [Data / Analytics Contract](DATA_ANALYTICS_CONTRACT_V1.md)
 - [V1 Quality Gates](QUALITY_GATES_V1.md)
+- [Calendar/Reconciliation Spike](CALENDAR_RECONCILIATION_SPIKE.md) — JVM-only code and tests
 
 ## Open decisions
 1. Full PRD and concrete reminder types.

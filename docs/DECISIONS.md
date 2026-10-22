@@ -28,4 +28,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 | D-018 | Use Room KMP or SQLDelight | PROPOSED | Official KMP Room support confirmed, but migration/encryption/device tests pending |
 | D-019 | Do not lock Compose shared iOS UI without VoiceOver/performance tests | PROPOSED | Both platforms supported by framework, real-world UX needs verification |
 
+| D-020 | Separate calendar recurrence rules from native time-zone-to-instant resolution | PROVISIONALLY VALIDATED on JVM | Leap day/weekdays/monthly-date behaviour tested; DST/native zone resolver unimplemented |
+| D-021 | Native scheduling registers only desired pending alerts via reconciliation plan | PROVISIONALLY VALIDATED on JVM | Pure planner tests missing/stale/duplicate/revised alert projection |
+| D-022 | Skip nonexistent monthly calendar dates instead of shifting dates | PROPOSED | This behaviour has a JVM test; still requires product approval |
+| D-023 | Treat calendar/common core spikes as feasibility code, not production Android/iOS apps | ACCEPTED (reporting) | No native SDK/Xcode/device execution completed |
+
 **Reminder:** Accepted product goals are not claims that code is implemented. This document is updated as choices are finalized or revised.
