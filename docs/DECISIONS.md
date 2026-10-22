@@ -24,4 +24,8 @@ Statuses: **PROPOSED**, **ACCEPTED**, **SUPERSEDED**.
 
 Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Contract](REMINDER_BEHAVIOR_V1.md), [Data/Analytics](DATA_ANALYTICS_CONTRACT_V1.md), [Quality Gates](QUALITY_GATES_V1.md).
 
+| D-017 | Kotlin shared rule engine can be isolated from OS scheduling | PROVISIONALLY VALIDATED on JVM only | 16 Kotlin CLI smoke assertions passed, not an Android/iOS compile |
+| D-018 | Use Room KMP or SQLDelight | PROPOSED | Official KMP Room support confirmed, but migration/encryption/device tests pending |
+| D-019 | Do not lock Compose shared iOS UI without VoiceOver/performance tests | PROPOSED | Both platforms supported by framework, real-world UX needs verification |
+
 **Reminder:** Accepted product goals are not claims that code is implemented. This document is updated as choices are finalized or revised.
