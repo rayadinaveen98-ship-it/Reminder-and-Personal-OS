@@ -66,7 +66,7 @@ class ReminderStore:
         ).fetchone()
 
     def action(self, *, action_id, occurrence_id, kind, at_ms, now_ms,
-               snooze_until_ms=None, cancel_job_id=None):
+               snooze_until_ms=None, cancel_job_id=None, register_job_id=None):
         """Atomically commit response event + current state + cancel intention.
 
         Important: unknown/no response is not a user action or terminal failure.
@@ -91,8 +91,12 @@ class ReminderStore:
                     raise Conflict("Invalid snooze target")
             elif snooze_until_ms is not None:
                 raise Conflict("Unexpected snooze time")
-            if kind in {"DONE","SKIP"} and not cancel_job_id:
-                raise Conflict("Terminal outcome requires cancellation outbox ID")
+            if kind in {"DONE","SKIP","SNOOZE"} and not cancel_job_id:
+                raise Conflict("Resolving or snoozing requires cancellation outbox ID")
+            if kind == "SNOOZE" and not register_job_id:
+                raise Conflict("Snooze requires new registration job ID")
+            if kind != "SNOOZE" and register_job_id is not None:
+                raise Conflict("Unexpected registration job")
             next_outcome = {
                 "DONE": "DONE", "SKIP": "SKIPPED", "REOPEN": "UNKNOWN"
             }.get(kind, previous)
@@ -109,7 +113,15 @@ class ReminderStore:
                 "UPDATE occurrences SET outcome=?,acknowledged=?,snoozed_until_ms=?,updated_at_ms=? WHERE id=?",
                 (next_outcome, ack, new_snooze, now_ms, occurrence_id),
             )
-            if kind in {"DONE","SKIP"}:
+            if kind in {"DONE","SKIP","SNOOZE"}:
+                # Retire unexecuted register requests before a cancellation or
+                # revised snooze can be processed by the OS executor.
+                self.db.execute(
+                    """UPDATE schedule_outbox SET state='SUPERSEDED',updated_at_ms=?
+                       WHERE occurrence_id=? AND operation='REGISTER'
+                         AND state IN ('PENDING','FAILED')""",
+                    (now_ms, occurrence_id),
+                )
                 revision = self.db.execute(
                     "SELECT revision FROM occurrences WHERE id=?", (occurrence_id,)
                 ).fetchone()[0]
@@ -119,6 +131,15 @@ class ReminderStore:
                        VALUES(?,?,'CANCEL',?,?,?)""",
                     (cancel_job_id, occurrence_id, revision, now_ms, now_ms),
                 )
+                if kind == "SNOOZE":
+                    self.db.execute(
+                        """INSERT INTO schedule_outbox
+                           (id,occurrence_id,operation,fire_at_ms,revision,
+                            created_at_ms,updated_at_ms)
+                           VALUES(?,?,'REGISTER',?,?,?,?)""",
+                        (register_job_id, occurrence_id, snooze_until_ms,
+                         revision, now_ms, now_ms),
+                    )
             return "APPLIED"
 
     def pending_operations(self):
@@ -156,6 +177,8 @@ class ReminderStore:
                 raise Conflict("Unknown operation")
             if row["state"] == "APPLIED":
                 return "DUPLICATE"
+            if row["state"] == "SUPERSEDED":
+                raise Conflict("Superseded operation cannot be applied")
             if row["operation"] == "REGISTER":
                 if not native_handle:
                     raise Conflict("Registration requires native handle")
