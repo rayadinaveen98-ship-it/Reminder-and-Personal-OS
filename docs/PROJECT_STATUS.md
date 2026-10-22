@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/native-notification-preview` (stacked on KMP foundation)  
-**Stage:** Native Android debug APK and iOS Simulator preview app built in CI; physical-device notification reliability pending
+**Working branch:** `feature/durable-event-store-v1` (stacked on native notification preview)  
+**Stage:** Native notification preview builds passed; transactional SQLite event-store/outbox prototype committed for automated validation
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -79,3 +79,11 @@ Every active work session starts with reading repo history and open branches. Co
 - Android artifact: **android-native-preview-debug** (debug APK, no on-device reliability test).
 - iOS artifact: **ios-native-preview-simulator** (simulator .app, not a signed device .ipa).
 - PR #5 remains a draft because physical-device permission/background/notification delivery, production storage and integration with shared KMP business logic are not completed.
+
+## Portable persistence and outbox spike — 2026-10-22
+- Added `storage/schema/v1.sql`: versioned reminder/occurrence/action/outbox/platform registration SQL schema with foreign keys and integrity constraints.
+- Added `tools/sqlite_reference.py`: transactionally records reminder creation, explicit actions, cancellation/re-registration intentions, retryable failure states and accepted native-registration projection. **Executable reference, not mobile app repository implementation.**
+- Added `tests/test_sqlite_reference.py` for failure rollback, duplicate action callbacks, snooze, job superseding/retry, unknown-outcome analytics, SQLite reopen and schema refusal.
+- Added independent `sqlite-contract` GitHub Actions job; CI outcome must be checked before claiming tests passed.
+- Documented [Durable Persistence Contract](PERSISTENCE_CONTRACT_V1.md), crash windows and physical-device validation still outstanding.
+- Production cross-platform persistence library selection (Room KMP / SQLDelight), schema migrations, native outbox executor, concurrent writes, encrypted backup and device verification remain pending.

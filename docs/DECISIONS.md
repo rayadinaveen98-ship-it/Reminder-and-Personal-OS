@@ -48,3 +48,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 ## Native preview build notes — 2026-10-22
 - D-032 (PROVISIONALLY ACCEPTED): Android test harness uses a separate standalone Gradle build because combining AGP 9's built-in Kotlin compiler with the experimental shared KMP module caused Kotlin metadata/classloader errors. This is temporary; a properly verified KMP-to-Android bridge is still required.
 - D-033 (ACCEPTED reporting principle): A compiled debug APK is not evidence that notifications arrived reliably or that a person completed a task.
+
+## Persistence design proposals — 2026-10-22
+- D-034 (PROPOSED): Portable versioned SQLite schema stores reminder intent, occurrence outcomes, explicit action events, native-registration projections and pending OS operation outbox.
+- D-035 (PROPOSED): SQLite transaction must encompass outcome/action/outbox enqueue atomically; OS call executes afterward using idempotent, stable native IDs.
+- D-036 (ACCEPTED reporting principle): SQLite reference tests never constitute Android/iOS app persistence or device reliability evidence.
+- D-037 (OPEN): Evaluate Room KMP stable line vs SQLDelight and confirm an actual upgrade/migration and encrypted backup strategy before production integration.
