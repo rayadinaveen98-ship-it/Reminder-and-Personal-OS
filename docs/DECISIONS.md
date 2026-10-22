@@ -33,4 +33,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 | D-022 | Skip nonexistent monthly calendar dates instead of shifting dates | PROPOSED | This behaviour has a JVM test; still requires product approval |
 | D-023 | Treat calendar/common core spikes as feasibility code, not production Android/iOS apps | ACCEPTED (reporting) | No native SDK/Xcode/device execution completed |
 
+| D-024 | Provisional KMP build version set Kotlin 2.4.20 / AGP 9.3.1 / Gradle 9.5.0 | PROPOSED | Matched official compatibility guidance, requires successful CI builds |
+| D-025 | Android KMP library in separate shared module | PROPOSED | AGP 9+ recommended structure; app shells not yet added |
+| D-026 | Native scheduler gateway models capability, accepted registration and explicit failure | PROVISIONALLY JVM-VALIDATED | 12 adapter-boundary tests; does not guarantee OS presentation |
+| D-027 | Do not replace native alert if cancellation failed | PROVISIONALLY JVM-VALIDATED | Avoid duplicate alarms after partial failures; requires persistent journal and retry |
+
 **Reminder:** Accepted product goals are not claims that code is implemented. This document is updated as choices are finalized or revised.

@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/calendar-reconciliation-spike` (stacked on shared-core spike)  
-**Stage:** V1 draft + shared Kotlin core spikes: 53 JVM checks passed; native feasibility pending
+**Working branch:** `feature/kmp-platform-foundation` (stacked on calendar/reconciliation spike)  
+**Stage:** KMP Gradle foundation and scheduling port committed; 65 local JVM smoke checks passed; native compile/device validation pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -27,15 +27,24 @@
 - See [Calendar and Reconciliation Spike](CALENDAR_RECONCILIATION_SPIKE.md).
 - **No actual Android/iOS alarms, native compilation or device tests yet.** Calendar-to-UTC/DST resolution and transactional persistence remain pending.
 
+## KMP platform foundation — 2026-10-22
+- Added provisional Kotlin Multiplatform Gradle build module targeting JVM, Android KMP library, iOS Arm64 and iOS Simulator Arm64.
+- Added common-test Kotlin assertions for reminder and native scheduler interface behaviour.
+- Added `NativeScheduleGateway` capability/result contract and guarded reconciliation executor.
+- **PASS local Kotlin CLI:** 12 additional adapter-boundary smoke checks; 65 total across three smoke suites.
+- Added GitHub Actions workflow to request JVM + Android compilation on Linux and iOS Simulator compilation on macOS.
+- **CI evidence:** Initial run [#39803890112](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39803890112) passed iOS Simulator shared-code compilation but failed Android SDK setup. Corrected run [#39804136951](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39804136951) passed shared JVM tests **and Android library compilation**; iOS job was still running at last check (initial run had succeeded). Split the latest CI workflow into separate JVM/Android/iOS jobs so platform bootstrapping cannot hide JVM test results. No native notification delivery, signed app or physical-device test was performed.
+- Added [Native Platform Validation Plan](NATIVE_PLATFORM_VALIDATION.md) and recorded pinned candidate tooling.
+
 ## Not yet implemented or verified
-- No Android or iOS application shell, native scheduling adapters, database, functional reminder delivery or tracking app. One isolated shared-core proof of concept exists.
-- No integrated KMP/Gradle tests, Android/iOS instrumentation or device tests, APK, IPA or release. JVM smoke passed only.
+- No Android or iOS application shell, native AlarmManager/UNUserNotificationCenter adapters, database, functional reminder delivery or tracking app. Shared Kotlin proof-of-concept and KMP module scaffold exist.
+- KMP Gradle/native CI results pending; no Android/iOS instrumentation or device tests, APK, IPA or release. Local JVM smoke passed.
 - No finalized OS version floor, KMP UI sharing validation or persistence library decision.
 - No user approval for the V1 PRD, individual reminder defaults or visual design.
 
 ## Next work — in order
 1. Review and lock a small set of P0 product behaviour choices (quiet hours, follow-up defaults, recurrence edges).
-2. Complete native platform feasibility: configure compatible KMP Gradle/Compose stack, local persistence, Android/iOS notification adapters, macOS/Xcode and device access.
+2. Validate the committed KMP Gradle compilation on CI (Android and iOS), then implement platform notification adapters and local persistence.
 3. Finalize module boundaries, version matrix and data migrations from the tested spike.
 4. Design main journeys and design system, then scaffold the project on an implementation branch with basic tests.
 5. Build and test reminder core before advanced analytics or optional AI.
@@ -48,3 +57,4 @@ Every active work session starts with reading repo history and open branches. Co
 - **2026-10-22:** V1 scope, reminder lifecycle, event/analytics model and quality gates drafted on documentation branch.
 - **2026-10-22:** Initial portable Kotlin reminder-core smoke test passed (16 JVM checks); platform feasibility report documented.
 - **2026-10-22:** Added calendar recurrence and OS registration reconciliation spike with 37 additional JVM checks (53 total); native delivery still untested.
+- **2026-10-22:** Added KMP target configuration, shared scheduling gateway and 12 local JVM checks (65 total); CI native compilation remains to be confirmed.

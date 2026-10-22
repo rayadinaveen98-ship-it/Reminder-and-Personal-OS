@@ -23,7 +23,7 @@ Help people not just remember commitments, but record what actually happened, id
 - **Storage:** Local-first database; evaluate a compatible Kotlin Multiplatform persistence solution before locking.
 - **Optional future capabilities:** AI assistance, encrypted sync, and integrations.
 
-See [Calendar and Scheduler Reconciliation Spike](docs/CALENDAR_RECONCILIATION_SPIKE.md) (37 JVM checks) plus [Initial Cross-Platform Feasibility Spike](docs/TECH_FEASIBILITY_SPIKE.md) (JVM-only smoke, native targets untested) and [Architecture Proposal](docs/ARCHITECTURE.md), [V1 Product Requirements (draft)](docs/PRODUCT_REQUIREMENTS_V1.md), [Reminder Behaviour (draft)](docs/REMINDER_BEHAVIOR_V1.md), [Data & Analytics Contract (draft)](docs/DATA_ANALYTICS_CONTRACT_V1.md), [V1 Quality Gates](docs/QUALITY_GATES_V1.md) and [Project Status](docs/PROJECT_STATUS.md).
+See [Native Platform Validation Plan](docs/NATIVE_PLATFORM_VALIDATION.md) (cross-platform Gradle scaffold, pending CI verification), [Calendar and Scheduler Reconciliation Spike](docs/CALENDAR_RECONCILIATION_SPIKE.md) (37 JVM checks) plus [Initial Cross-Platform Feasibility Spike](docs/TECH_FEASIBILITY_SPIKE.md) (JVM-only smoke, native targets untested) and [Architecture Proposal](docs/ARCHITECTURE.md), [V1 Product Requirements (draft)](docs/PRODUCT_REQUIREMENTS_V1.md), [Reminder Behaviour (draft)](docs/REMINDER_BEHAVIOR_V1.md), [Data & Analytics Contract (draft)](docs/DATA_ANALYTICS_CONTRACT_V1.md), [V1 Quality Gates](docs/QUALITY_GATES_V1.md) and [Project Status](docs/PROJECT_STATUS.md).
 
 ## V1 scope (provisional)
 1. Reliable local reminders and configurable follow-ups.
@@ -39,4 +39,4 @@ See [Calendar and Scheduler Reconciliation Spike](docs/CALENDAR_RECONCILIATION_S
 - No unattended or continuous background development is implied: repository updates happen during active work sessions.
 
 ## Next step
-Review and validate the draft V1 requirements; complete real Gradle KMP builds and Android/iOS scheduling and persistence feasibility checks before production scaffolding. The isolated JVM proof of concept (currently 53 smoke checks) is not a mobile app.
+Review and validate the draft V1 requirements; complete real Gradle KMP builds and Android/iOS scheduling and persistence feasibility checks before production scaffolding. The shared core (currently 65 local JVM smoke checks) and KMP Gradle scaffold are **not** an installable mobile app. Android/iOS CI compilation and notification delivery are not yet verified.

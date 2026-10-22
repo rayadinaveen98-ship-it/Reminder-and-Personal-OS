@@ -71,6 +71,7 @@ Local-first storage; least-privilege permissions; protected handling of sensitiv
 - [Data / Analytics Contract](DATA_ANALYTICS_CONTRACT_V1.md)
 - [V1 Quality Gates](QUALITY_GATES_V1.md)
 - [Calendar/Reconciliation Spike](CALENDAR_RECONCILIATION_SPIKE.md) — JVM-only code and tests
+- [Native Platform Validation](NATIVE_PLATFORM_VALIDATION.md) — build scaffold, scheduler port and pending CI/device tests
 
 ## Open decisions
 1. Full PRD and concrete reminder types.
