@@ -3,8 +3,6 @@ package dev.reminderos.preview
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import dev.reminderos.core.AlertIntent
-import dev.reminderos.core.PlatformScheduleResult
 
 /**
  * Android callback means alarm execution was attempted, not notification presentation
@@ -42,10 +40,10 @@ class PreviewRestoreReceiver : BroadcastReceiver() {
             return
         }
         when (PreviewAlarmGateway(context).schedule(
-            AlertIntent(PreviewAlarmGateway.PREVIEW_ID, due, 1)
+            PreviewAlert(PreviewAlarmGateway.PREVIEW_ID, due, 1)
         )) {
-            is PlatformScheduleResult.Accepted -> Unit
-            is PlatformScheduleResult.Rejected -> Unit // Keep durable due time for next app launch.
+            is PreviewScheduleResult.Accepted -> Unit
+            is PreviewScheduleResult.Rejected -> Unit // Keep durable due time for next app launch.
         }
     }
 }
