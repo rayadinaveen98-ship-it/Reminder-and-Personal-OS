@@ -54,3 +54,8 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-035 (PROPOSED): SQLite transaction must encompass outcome/action/outbox enqueue atomically; OS call executes afterward using idempotent, stable native IDs.
 - D-036 (ACCEPTED reporting principle): SQLite reference tests never constitute Android/iOS app persistence or device reliability evidence.
 - D-037 (OPEN): Evaluate Room KMP stable line vs SQLDelight and confirm an actual upgrade/migration and encrypted backup strategy before production integration.
+
+## Android alpha implementation decisions — 2026-10-22
+- D-038 (TEMPORARY): Android Alpha v0.2 uses native SQLiteOpenHelper with separate app package to validate actual multiple reminder persistence and actions before full KMP database integration.
+- D-039 (PROPOSED): Native one-time AlarmManager alarms use stable per-reminder PendingIntent URI identity and revision guards to avoid responding to superseded alerts.
+- D-040 (ACCEPTED reporting): Passing debug APK CI is not evidence of device-level reliability; Alpha v0.2 is not suitable for critical alarms. Physical-device QA, migration and backup remain release blockers.
