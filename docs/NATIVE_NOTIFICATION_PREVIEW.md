@@ -15,8 +15,8 @@ This is a focused native-system feasibility harness rather than the final Remind
 - A manifest BroadcastReceiver handles the alarm callback and posts a channel notification. The callback never marks a task complete.
 - A single stored future deadline in SharedPreferences is re-registered on Activity resume and eligible restart/time-change broadcasts. This is preview-only state, not production transactional persistence.
 - The UI shows capability state, the next due time, an exact alarm settings shortcut and cancellation.
-- Source path: androidApp. Build command: gradle :androidApp:assembleDebug.
-- Build artifact after successful CI: androidApp-debug.apk (unsigned release? This is a debug-signed build only, not a release package).
+- Source path: androidApp. Build command: gradle -p androidApp assembleDebug. The Android preview is an independent Gradle build to avoid AGP 9 mixed-classloader conflicts.
+- Build artifact after successful CI: androidApp-debug.apk (debug-signed APK; not a release package).
 
 ## iOS
 
@@ -33,7 +33,7 @@ This is a focused native-system feasibility harness rather than the final Remind
 2. Android SharedPreferences state is intentionally a primitive test aid; it must not be treated as a production scheduling database.
 3. Android permission eligibility, OEM battery policies and iOS Focus and alert settings mean delivery timing cannot be universally guaranteed.
 4. App background, swipe-away, reboot, permission revocation, power-off, cancellation and exact-vs-inexact timing need physical-device evidence.
-5. iOS SwiftUI preview is not connected to KMP shared business logic yet; native scheduling boundaries are being validated first.
+5. Both platform preview shells are currently independent of KMP shared business logic. The Android Gradle build is deliberately isolated from KMP after AGP 9 toolchain conflicts; production bridging remains pending.
 6. Debug builds, simulator builds and compilation are not proof of end-to-end reminder reliability.
 
 ## Test checklist
