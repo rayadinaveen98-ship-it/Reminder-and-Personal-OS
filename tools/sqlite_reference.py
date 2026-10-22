@@ -76,7 +76,15 @@ class ReminderStore:
         if kind not in {"DONE","SKIP","SNOOZE","ACKNOWLEDGE","REOPEN"}:
             raise Conflict("Invalid action")
         with self.transaction():
-            if self.db.execute("SELECT 1 FROM action_events WHERE id=?", (action_id,)).fetchone():
+            existing = self.db.execute(
+                "SELECT occurrence_id,kind,acted_at_ms,snooze_until_ms FROM action_events WHERE id=?",
+                (action_id,),
+            ).fetchone()
+            if existing:
+                if (existing["occurrence_id"] != occurrence_id or
+                    existing["kind"] != kind or existing["acted_at_ms"] != at_ms or
+                    existing["snooze_until_ms"] != snooze_until_ms):
+                    raise Conflict("Action ID reused for a different action")
                 return "DUPLICATE"
             row = self.outcome(occurrence_id)
             if row is None:
