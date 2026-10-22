@@ -35,9 +35,9 @@ fun main() {
     checkThat(skipped.outcome == Outcome.SKIPPED, "explicit skip only")
 
     val ten = listOf(
-        *Array(6) { i -> OccurrenceState("done-$"+"i", 1_000, Outcome.DONE) },
+        *Array(6) { i -> OccurrenceState("done-" + i, 1_000, Outcome.DONE) },
         OccurrenceState("skip", 1_000, Outcome.SKIPPED),
-        *Array(3) { i -> OccurrenceState("unknown-$"+"i", 1_000) },
+        *Array(3) { i -> OccurrenceState("unknown-" + i, 1_000) },
         OccurrenceState("outside", 3_000, Outcome.DONE),
     )
     val summary = summarize(ten, 0, 2_000)
@@ -55,5 +55,5 @@ fun main() {
         "duplicate occurrence identity rejected")
     checkThat(runCatching { summarize(emptyList(), 5, 5) }.isFailure,
         "invalid period rejected")
-    println("PASS: $"+"checks reminder core smoke checks (Kotlin JVM only)")
+    println("PASS: " + checks + " reminder core smoke checks (Kotlin JVM only)")
 }
