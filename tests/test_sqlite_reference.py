@@ -48,6 +48,12 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(1, len(self.rows("action_events")))
         self.assertEqual(2, len(self.rows("schedule_outbox")))
 
+    def test_same_action_id_with_changed_payload_rejected(self):
+        self.respond(cancel_job_id="cancel-1")
+        with self.assertRaises(Conflict):
+            self.respond(aid="a1", kind="SKIP", cancel_job_id="cancel-different")
+        self.assertEqual("DONE", self.s.outcome("o1")["outcome"])
+
     def test_new_action_on_resolved_reminder_rejected(self):
         self.respond(cancel_job_id="cancel-1")
         with self.assertRaises(Conflict):
@@ -124,7 +130,6 @@ class StoreTests(unittest.TestCase):
 
     def test_cancellation_does_not_change_user_outcome(self):
         self.s.mark_operation_applied("job-1", 1200, "os1")
-        self.s.mark_operation_failed("job-1", "unreachable", 1300) if False else None
         self.assertEqual("UNKNOWN", self.s.outcome("o1")["outcome"])
 
     def test_reopen_requires_explicit_new_event(self):
