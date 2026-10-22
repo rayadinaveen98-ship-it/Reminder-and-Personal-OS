@@ -14,4 +14,14 @@ Statuses: **PROPOSED**, **ACCEPTED**, **SUPERSEDED**.
 | D-008 | Optional cloud sync and AI, after reliable local V1 | PROPOSED | Reduce dependency, cost and privacy risk |
 | D-009 | Document every meaningful code milestone and evidence | ACCEPTED (workflow) | Git history + project status should reflect real work |
 
+| D-010 | V1 initial release is focused on reminders + independent trackers + basic evidence-based analytics | PROPOSED | See V1 PRD; excludes cloud account, AI agent and shared workspaces |
+| D-011 | Reminder non-response is UNKNOWN, not automatically a Skip or Done | PROPOSED | Protect analytics integrity; needs sign-off and tests |
+| D-012 | Default initial alert has no automatic repeat; optional single capped follow-up | PROPOSED | Avoid notification fatigue; configurable per reminder |
+| D-013 | Store current state plus append-only audit-relevant event history | PROPOSED | Auditable analytics without complex event-sourcing platform |
+| D-014 | Release requires Android and iOS physical-device validation | PROPOSED | OS lifecycle and notification restrictions differ |
+| D-015 | Privacy-preserving encrypted backup/restore part of V1 critical quality scope | PROPOSED | Protect local-first user data |
+| D-016 | Time zone / DST recurrence defaults described in reminder contract | PROPOSED | Validate UX and native scheduling before locking |
+
+Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Contract](REMINDER_BEHAVIOR_V1.md), [Data/Analytics](DATA_ANALYTICS_CONTRACT_V1.md), [Quality Gates](QUALITY_GATES_V1.md).
+
 **Reminder:** Accepted product goals are not claims that code is implemented. This document is updated as choices are finalized or revised.
