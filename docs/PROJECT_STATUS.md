@@ -33,7 +33,7 @@
 - Added `NativeScheduleGateway` capability/result contract and guarded reconciliation executor.
 - **PASS local Kotlin CLI:** 12 additional adapter-boundary smoke checks; 65 total across three smoke suites.
 - Added GitHub Actions workflow to request JVM + Android compilation on Linux and iOS Simulator compilation on macOS.
-- **CI started:** First run (#39803890112) stopped in Android SDK setup (`android-actions/setup-android@v3` requested obsolete `tools` package), before compilation; corrected workflow to use hosted runner SDK manager. No Android or iOS KMP compilation success verified yet.
+- **CI evidence:** Initial Actions run [#39803890112](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39803890112) finished **iOS Simulator shared-code compilation: success**, but Android job failed at the obsolete SDK setup action before compilation. Fixed SDK bootstrap and split JVM, Android and iOS into independent jobs; updated Android/JVM CI still requires verified passing results. No native notification delivery or signed app was tested.
 - Added [Native Platform Validation Plan](NATIVE_PLATFORM_VALIDATION.md) and recorded pinned candidate tooling.
 
 ## Not yet implemented or verified
