@@ -40,3 +40,6 @@ See [Native Notification Preview](docs/NATIVE_NOTIFICATION_PREVIEW.md) (Android/
 
 ## Next step
 Review and validate the draft V1 requirements; complete real Gradle KMP builds and Android/iOS scheduling and persistence feasibility checks before production scaffolding. The shared core has 65 local JVM smoke checks and Android/iOS shared-library CI compilation has passed. Android debug APK and iOS Simulator one-alert preview app **both compile successfully in CI** ([run #39807577755](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39807577755)). Native delivery still requires physical-device verification; neither preview is the final product.
+
+### Durable storage research
+A [portable SQLite event + scheduling outbox contract](docs/PERSISTENCE_CONTRACT_V1.md) is being tested. It is a reference implementation and **not yet a mobile database adapter**.
