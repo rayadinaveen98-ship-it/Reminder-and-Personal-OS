@@ -46,7 +46,7 @@ CREATE TABLE schedule_outbox (
     operation TEXT NOT NULL CHECK(operation IN ('REGISTER','CANCEL')),
     fire_at_ms INTEGER,
     revision INTEGER NOT NULL CHECK(revision > 0),
-    state TEXT NOT NULL DEFAULT 'PENDING' CHECK(state IN ('PENDING','APPLIED','FAILED')),
+    state TEXT NOT NULL DEFAULT 'PENDING' CHECK(state IN ('PENDING','APPLIED','FAILED','SUPERSEDED')),
     attempts INTEGER NOT NULL DEFAULT 0 CHECK(attempts >= 0),
     last_error TEXT,
     created_at_ms INTEGER NOT NULL,
