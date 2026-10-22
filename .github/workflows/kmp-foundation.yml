@@ -11,6 +11,15 @@ permissions:
   contents: read
 
 jobs:
+  sqlite-contract:
+    name: Portable SQLite transactional contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test SQLite schema, recovery and outbox transactions
+        run: python3 -m unittest discover -s tests -p 'test_sqlite_reference.py' -v
+
   shared-jvm:
     name: Shared JVM compile and tests
     runs-on: ubuntu-latest
