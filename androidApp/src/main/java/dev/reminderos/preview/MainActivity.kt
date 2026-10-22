@@ -14,9 +14,6 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import dev.reminderos.core.AlertIntent
-import dev.reminderos.core.PlatformRegistration
-import dev.reminderos.core.PlatformScheduleResult
 import java.text.DateFormat
 import java.util.Date
 
@@ -72,7 +69,7 @@ class MainActivity : Activity() {
         // A previous native scheduling attempt may have failed after OS permission changes.
         val due = PreviewStore.due(this)
         if (due > System.currentTimeMillis()) {
-            gateway.schedule(AlertIntent(PreviewAlarmGateway.PREVIEW_ID, due, 1))
+            gateway.schedule(PreviewAlert(PreviewAlarmGateway.PREVIEW_ID, due, 1))
         }
         refreshStatus()
     }
@@ -87,8 +84,8 @@ class MainActivity : Activity() {
         val due = System.currentTimeMillis() + 60_000L
         // Save before registering; restore can retry after interruption.
         PreviewStore.save(this, due)
-        val result = gateway.schedule(AlertIntent(PreviewAlarmGateway.PREVIEW_ID, due, 1))
-        if (result is PlatformScheduleResult.Rejected) {
+        val result = gateway.schedule(PreviewAlert(PreviewAlarmGateway.PREVIEW_ID, due, 1))
+        if (result is PreviewScheduleResult.Rejected) {
             status.text = "Could not schedule: ${result.reasonCode}. Check permissions."
         } else {
             refreshStatus()
@@ -99,7 +96,7 @@ class MainActivity : Activity() {
         val due = PreviewStore.due(this)
         if (due > 0) {
             val cancelled = gateway.cancel(
-                PlatformRegistration(PreviewAlarmGateway.PREVIEW_ID,
+                PreviewRegistration(PreviewAlarmGateway.PREVIEW_ID,
                     PreviewAlarmGateway.PREVIEW_ID, due, 1)
             )
             if (cancelled) PreviewStore.clear(this)
