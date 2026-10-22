@@ -65,6 +65,12 @@ Local-first storage; least-privilege permissions; protected handling of sensitiv
 - Accessibility and performance on physical devices.
 - Clearly report OS-level limitations; do not promise universal exact delivery.
 
+## Related draft specifications
+- [V1 PRD](PRODUCT_REQUIREMENTS_V1.md)
+- [Reminder Behaviour Contract](REMINDER_BEHAVIOR_V1.md)
+- [Data / Analytics Contract](DATA_ANALYTICS_CONTRACT_V1.md)
+- [V1 Quality Gates](QUALITY_GATES_V1.md)
+
 ## Open decisions
 1. Full PRD and concrete reminder types.
 2. Compose Multiplatform UI vs selective native SwiftUI UI.
