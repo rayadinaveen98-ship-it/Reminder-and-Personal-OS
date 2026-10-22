@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-22
 **Scope:** Single native local reminder test on each platform.
-**Stage:** Source committed, CI build/device verification pending.
+**Stage:** Android APK and iOS Simulator app built successfully in CI; physical-device verification pending.
 
 ## Scope
 
@@ -57,5 +57,10 @@ This is a focused native-system feasibility harness rather than the final Remind
 
 ## Build evidence update — 2026-10-22
 - **Android APK: PASS** in GitHub Actions run #39807577755, artifact `android-native-preview-debug`, generated from preview branch source. APK contents and SHA-256 verified after download.
-- **iOS Simulator app: PENDING** at this update; do not claim build/install until CI explicitly passes.
+- **iOS Simulator app: PASS** at this update; do not claim build/install until CI explicitly passes.
 - **Native delivery: UNTESTED** on Android and iPhone devices. Debug build success is not real-world reminder reliability.
+
+## Final build outcome
+- [GitHub Actions run #39807577755](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39807577755) completed all three build jobs successfully.
+- Android debug APK and iOS Simulator app artifacts were created. No signed iPhone IPA exists.
+- **Critical outstanding validation:** notification delivery, cancellation, permission and background behaviour on physical Android and iPhone devices. Build success alone is not proof of those scenarios.
