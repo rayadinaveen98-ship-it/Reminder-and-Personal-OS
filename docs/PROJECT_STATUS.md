@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
 **Working branch:** `feature/native-notification-preview` (stacked on KMP foundation)  
-**Stage:** Native Android and iOS notification preview sources committed; app CI and physical-device validation pending
+**Stage:** Native Android debug APK and iOS Simulator preview app built in CI; physical-device notification reliability pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -46,7 +46,7 @@
 
 ## Not yet implemented or verified
 - Android and iOS notification preview shells exist in source; neither has verified end-to-end native delivery or user completion tracking. Production AlarmManager/UNUserNotificationCenter adapters and shared database remain pending.
-- Previous KMP shared-library CI builds passed. New Android APK and iOS Simulator preview app CI results are pending. No physical-device evidence, signed iOS IPA or release.
+- Previous KMP shared-library CI builds passed. New Android APK and iOS Simulator preview app CI build passed. No physical-device evidence, signed iOS IPA or release.
 - No finalized OS version floor, KMP UI sharing validation or persistence library decision.
 - No user approval for the V1 PRD, individual reminder defaults or visual design.
 
@@ -72,4 +72,10 @@ Every active work session starts with reading repo history and open branches. Co
 - GitHub Actions [run #39807577755](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39807577755) **passed** shared JVM checks, Android KMP shared-library compilation and separate Android app debug APK assembly.
 - Verified the artifact **android-native-preview-debug**, containing ReminderAndroidPreview-debug.apk, size 884,810 bytes, SHA-256 `06d9a09a231808779e5fe5313f37cd43588ab1eebac5f1878e48a2d5d213c03f`.
 - The Android preview is deliberately isolated as a separate Gradle project to avoid mixed AGP 9 Kotlin/KMP compiler classloader issues encountered in earlier failed CI builds. It is **not bridged into the KMP domain engine yet**.
-- iOS Simulator preview app compilation and all physical-device notification-delivery tests remain **unverified**. No signed iOS IPA or production-ready reminder APK exists.
+- iOS Simulator preview app **compiled successfully** in Actions run #39807577755. All physical-device notification-delivery tests remain **unverified**. No signed iOS IPA or production-ready reminder APK exists.
+
+## Full platform preview build evidence — 2026-10-22
+- **PASS:** [GitHub Actions #39807577755](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39807577755) completed all three jobs successfully: JVM unit tests, Android shared-library plus native APK, and iOS shared-library plus SwiftUI simulator application.
+- Android artifact: **android-native-preview-debug** (debug APK, no on-device reliability test).
+- iOS artifact: **ios-native-preview-simulator** (simulator .app, not a signed device .ipa).
+- PR #5 remains a draft because physical-device permission/background/notification delivery, production storage and integration with shared KMP business logic are not completed.
