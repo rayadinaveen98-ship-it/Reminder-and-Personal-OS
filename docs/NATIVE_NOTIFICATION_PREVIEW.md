@@ -54,3 +54,8 @@ This is a focused native-system feasibility harness rather than the final Remind
 2. Record native test results on physical devices.
 3. Add durable Room/KMP persistence, stable occurrence IDs and a transactional scheduling outbox.
 4. Connect native schedulers to shared reminder and analytics logic.
+
+## Build evidence update — 2026-10-22
+- **Android APK: PASS** in GitHub Actions run #39807577755, artifact `android-native-preview-debug`, generated from preview branch source. APK contents and SHA-256 verified after download.
+- **iOS Simulator app: PENDING** at this update; do not claim build/install until CI explicitly passes.
+- **Native delivery: UNTESTED** on Android and iPhone devices. Debug build success is not real-world reminder reliability.
