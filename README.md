@@ -23,7 +23,7 @@ Help people not just remember commitments, but record what actually happened, id
 - **Storage:** Local-first database; evaluate a compatible Kotlin Multiplatform persistence solution before locking.
 - **Optional future capabilities:** AI assistance, encrypted sync, and integrations.
 
-See [Architecture Proposal](docs/ARCHITECTURE.md) and [Project Status](docs/PROJECT_STATUS.md).
+See [Architecture Proposal](docs/ARCHITECTURE.md), [V1 Product Requirements (draft)](docs/PRODUCT_REQUIREMENTS_V1.md), [Reminder Behaviour (draft)](docs/REMINDER_BEHAVIOR_V1.md), [Data & Analytics Contract (draft)](docs/DATA_ANALYTICS_CONTRACT_V1.md), [V1 Quality Gates](docs/QUALITY_GATES_V1.md) and [Project Status](docs/PROJECT_STATUS.md).
 
 ## V1 scope (provisional)
 1. Reliable local reminders and configurable follow-ups.
@@ -39,4 +39,4 @@ See [Architecture Proposal](docs/ARCHITECTURE.md) and [Project Status](docs/PROJ
 - No unattended or continuous background development is implied: repository updates happen during active work sessions.
 
 ## Next step
-Define and approve the detailed Product Requirements Document, reminder semantics and tracking/event data contract before scaffolding code.
+Review and validate the draft V1 requirements, reminder and tracking contracts, then run cross-platform technical feasibility checks before scaffolding code.
