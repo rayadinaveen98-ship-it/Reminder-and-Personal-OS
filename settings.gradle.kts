@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "ReminderAndPersonalOS"
 include(":shared")
+include(":androidApp")
