@@ -47,8 +47,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.5.0'
-      - name: Build Android preview APK
-        run: gradle --no-daemon :shared:compileAndroidMain :androidApp:assembleDebug --stacktrace
+      - name: Compile shared Android KMP target
+        run: gradle --no-daemon :shared:compileAndroidMain --stacktrace
+      - name: Build independent Android native preview
+        run: gradle -p androidApp --no-daemon assembleDebug --stacktrace
       - name: Upload unsigned debug preview
         uses: actions/upload-artifact@v4
         with:
