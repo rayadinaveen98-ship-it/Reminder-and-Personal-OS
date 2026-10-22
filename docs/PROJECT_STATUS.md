@@ -67,3 +67,9 @@ Every active work session starts with reading repo history and open branches. Co
 - **2026-10-22:** Added calendar recurrence and OS registration reconciliation spike with 37 additional JVM checks (53 total); native delivery still untested.
 - **2026-10-22:** Added KMP target configuration, shared scheduling gateway and 12 local JVM checks (65 total); shared Android/iOS CI compilation passed.
 - **2026-10-22:** Added native Android/iOS one-alert notification preview source and CI build targets; new app builds and device notification delivery not yet verified.
+
+## Android preview CI validation — 2026-10-22
+- GitHub Actions [run #39807577755](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39807577755) **passed** shared JVM checks, Android KMP shared-library compilation and separate Android app debug APK assembly.
+- Verified the artifact **android-native-preview-debug**, containing ReminderAndroidPreview-debug.apk, size 884,810 bytes, SHA-256 `06d9a09a231808779e5fe5313f37cd43588ab1eebac5f1878e48a2d5d213c03f`.
+- The Android preview is deliberately isolated as a separate Gradle project to avoid mixed AGP 9 Kotlin/KMP compiler classloader issues encountered in earlier failed CI builds. It is **not bridged into the KMP domain engine yet**.
+- iOS Simulator preview app compilation and all physical-device notification-delivery tests remain **unverified**. No signed iOS IPA or production-ready reminder APK exists.
