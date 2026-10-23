@@ -95,6 +95,7 @@ class MainActivity : Activity() {
         outer.addView(statusLabel)
         outer.addView(text("Private backup & restore",19f))
         outer.addView(button("Export encrypted backup") { askForBackupPassword(true) })
+        outer.addView(button("Verify saved backup (no restore)") { askForBackupPassword(false,true) })
         outer.addView(button("Restore encrypted backup (empty app only)") { askForBackupPassword(false) })
         outer.addView(text("Keep your backup password safe. Restore only works when this app has no existing reminders. Existing data is never overwritten.",12f))
         outer.addView(button("Check & repair future alerts") {
@@ -214,8 +215,8 @@ class MainActivity : Activity() {
         })
     }
 
-    private fun askForBackupPassword(export: Boolean) {
-        if (!export && backupRepository.hasUserRecords()) {
+    private fun askForBackupPassword(export: Boolean, verifyOnly: Boolean = false) {
+        if (!export && !verifyOnly && backupRepository.hasUserRecords()) {
             AlertDialog.Builder(this)
                 .setTitle("Restore blocked to protect existing reminders")
                 .setMessage("This app already contains reminder data. Restore cannot overwrite or merge it. Use a new empty installation and retain the current app.")
@@ -239,10 +240,16 @@ class MainActivity : Activity() {
         } else null
         if(confirm != null) inputs.addView(confirm)
         AlertDialog.Builder(this)
-            .setTitle(if(export) "Create encrypted backup" else "Restore encrypted backup")
-            .setMessage(if(export)
-                "Use a unique passphrase of at least 12 characters. If forgotten, the exported backup cannot be recovered."
-                else "The correct password is required. Restoring does not copy Android alarm permissions or OS registrations.")
+            .setTitle(when {
+                export -> "Create encrypted backup"
+                verifyOnly -> "Verify backup safely"
+                else -> "Restore encrypted backup"
+            })
+            .setMessage(when {
+                export -> "Use a unique passphrase of at least 12 characters. If forgotten, the exported backup cannot be recovered."
+                verifyOnly -> "Checks your file and password without importing or altering any reminders."
+                else -> "The correct password is required. Restoring does not copy Android alarm permissions or OS registrations."
+            })
             .setView(inputs)
             .setNegativeButton("Cancel",null)
             .setPositiveButton(if(export) "Choose backup location" else "Choose backup file") { _, _ ->
@@ -265,7 +272,11 @@ class MainActivity : Activity() {
                     addCategory(Intent.CATEGORY_OPENABLE)
                     type="*/*"
                 }
-                try { startActivityForResult(intent,if(export) REQUEST_EXPORT else REQUEST_IMPORT) }
+                try { startActivityForResult(intent,when {
+                    export -> REQUEST_EXPORT
+                    verifyOnly -> REQUEST_VERIFY
+                    else -> REQUEST_IMPORT
+                }) }
                 catch (_: ActivityNotFoundException) {
                     pendingBackupPassword?.fill('\u0000')
                     pendingBackupPassword=null
@@ -277,7 +288,8 @@ class MainActivity : Activity() {
     @Deprecated("Used only for this isolated Android 8+ developer alpha")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
-        if(requestCode != REQUEST_EXPORT && requestCode != REQUEST_IMPORT) return
+        if(requestCode != REQUEST_EXPORT && requestCode != REQUEST_IMPORT &&
+            requestCode != REQUEST_VERIFY) return
         val password=pendingBackupPassword
         pendingBackupPassword=null
         if(resultCode != Activity.RESULT_OK || data?.data == null || password == null) {
@@ -308,12 +320,20 @@ class MainActivity : Activity() {
                     out.toByteArray()
                 } ?: throw IllegalStateException("Cannot read backup file")
                 try {
-                    val imported=backupRepository.importEncrypted(encrypted,password)
-                    store.ensureRecurring()
-                    store.recoverFuture()
-                    engine.flush()
-                    render()
-                    toast("Restored $imported occurrences. Future alerts rebuilt.")
+                    if(requestCode == REQUEST_VERIFY) {
+                        val result=backupRepository.inspectEncrypted(encrypted,password)
+                        AlertDialog.Builder(this)
+                            .setTitle("Backup verified")
+                            .setMessage(result)
+                            .setPositiveButton("OK",null).show()
+                    } else {
+                        val imported=backupRepository.importEncrypted(encrypted,password)
+                        store.ensureRecurring()
+                        store.recoverFuture()
+                        engine.flush()
+                        render()
+                        toast("Restored $imported occurrences. Future alerts rebuilt.")
+                    }
                 } finally { encrypted.fill(0) }
             }
         } catch (e: Exception) {
@@ -326,6 +346,7 @@ class MainActivity : Activity() {
     private companion object {
         const val REQUEST_EXPORT=7201
         const val REQUEST_IMPORT=7202
+        const val REQUEST_VERIFY=7203
     }
 
     private fun clearEditor() {
