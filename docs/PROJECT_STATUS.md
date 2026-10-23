@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/v03b-recurring-occurrences` (stacked on V0.3a)  
-**Stage:** Android V0.3b recurrence debug APK verified in CI; physical-device QA, stable signing and iOS reminder parity pending
+**Working branch:** `feature/v03c-encrypted-backup` (stacked on V0.3b)  
+**Stage:** V0.3c encrypted backup APK passes CI; physical-device import/export reliability remains unverified
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -127,3 +127,18 @@ Every active work session starts with reading repo history and open branches. Co
 - Developer test package `dev.reminderos.alpha.v03b` installs independently of previous alphas. V0.3b does not import V0.3a/V0.2 reminders; never uninstall previous versions without backup.
 - Per-occurrence recurring history is implemented in Android only and is unverified on real devices; native iOS host is still a one-alert preview.
 - Outstanding: production/reproducible APK signing, encrypted export/import, recurring rule editing, travel/DST edge-case validation, real-device battery/reboot testing and full tracking/analytics.
+
+## Encrypted backup V0.3c — 2026-10-23
+- Added authenticated AES-256-GCM password-based portable backup (PBKDF2-HMAC-SHA256, random salt/nonce, bounded payload). No plaintext file writes or password storage are intended.
+- Android system file-picker export/import, all-or-nothing restore into an empty app database, and rebuilding of future scheduling registrations after restore.
+- Exports reminder records, recurring rules and event history, explicitly **not** Android OS alarm handles/operation jobs.
+- Added 10 native JVM/JUnit crypto checks for successful roundtrip, wrong passphrase, tampering, truncated and oversized payloads.
+- Separate alpha package `dev.reminderos.alpha.v03c` protects older package installations. **Earlier V0.2/V0.3a/V0.3b records cannot automatically transfer into V0.3c**; older apps have no backup export.
+- [V0.3c scope and limitations](ANDROID_ALPHA_V0_3C.md). CI build and native device roundtrip not yet verified.
+
+## Verified V0.3c build — 2026-10-23
+- [GitHub Actions #39899394481](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39899394481) passed all four jobs including native Android crypto/calendar tests, SQLite contracts and iOS simulator regression compilation.
+- Android debug APK `android-reminder-v03c-debug`, source `85cc0891e33163784642128b925df428d815ae82`, **938,098 bytes**, SHA-256 `13d14c131ecaf13b8b141dbf5fcd57210ea2c4d2f7902bca9e8cd9d5a0e48f73`.
+- Added in-app encrypted export, integrity-check-only Verify Backup, and transactional empty-app restore; crypto/password tests are JVM-verified, native file picker and restore roundtrip **not device-tested**.
+- Separate package prevents overwriting earlier alpha apps, but cannot import their private data until a compatible export/upgrader exists.
+- Outstanding: first device export→verify→restore QA, durable release signing, scheduling reliability, accurate recurrence on travel and full iOS reminder parity.

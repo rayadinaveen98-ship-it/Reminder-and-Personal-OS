@@ -7,11 +7,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.reminderos.alpha.v03b"
+        applicationId = "dev.reminderos.alpha.v03c"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.0b-alpha"
+        versionCode = 5
+        versionName = "0.3.0c-alpha"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

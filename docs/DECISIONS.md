@@ -71,3 +71,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-046 (PROVISIONAL): Pre-materialize seven upcoming slots per schedule and replenish after app open/alarm callback/restart; capped historical backfill, not an unbounded background process.
 - D-047 (PROVISIONAL): Skip nonexistent monthly dates; use device-local calendar wall-clock recurrence, with DST and travel policy validation pending.
 - D-048 (ACCEPTED alpha safety): V0.3b installs alongside prior test packages to avoid losing user data under changing debug-signing keys.
+
+## V0.3c backup decisions — 2026-10-23
+- D-049 (PROPOSED): Use a password-protected, authenticated, versioned backup container with Android's system file picker rather than broad external-storage permissions.
+- D-050 (PROPOSED): Never overwrite populated reminder databases; restore into an empty app transactionally, then regenerate local OS alarms.
+- D-051 (ACCEPTED ALPHA LIMIT): A separately packaged test build cannot read another package's private app data. No assertion of V0.2/V0.3a/V0.3b import without a compatible export source.
+- D-052 (OPEN): Configure reproducible release signing from private GitHub secrets; never commit private keystore to the public repository.

@@ -5,11 +5,15 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.ActivityNotFoundException
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
+import java.io.ByteArrayOutputStream
 import android.provider.Settings
 import android.view.ViewGroup
 import android.widget.Button
@@ -41,6 +45,8 @@ class MainActivity : Activity() {
     private lateinit var repeatSpinner: Spinner
     private var weeklyDaysMask = 31 // Monday to Friday by default
 
+    private val backupRepository by lazy { ReminderBackupRepository(this) }
+    private var pendingBackupPassword: CharArray? = null
     private var editingId: String? = null
     private var editingRevision: Int? = null
 
@@ -83,10 +89,15 @@ class MainActivity : Activity() {
             setPadding(32, 30, 32, 40)
         }
         outer.addView(text("Reminder & Personal OS", 24f))
-        outer.addView(text("Android V0.3b · Recurring reminder test", 13f))
+        outer.addView(text("Android V0.3c · Encrypted backup test", 13f))
         outer.addView(text("Save real reminders, receive system alerts, and record what happened.", 14f))
         statusLabel = text("")
         outer.addView(statusLabel)
+        outer.addView(text("Private backup & restore",19f))
+        outer.addView(button("Export encrypted backup") { askForBackupPassword(true) })
+        outer.addView(button("Verify saved backup (no restore)") { askForBackupPassword(false,true) })
+        outer.addView(button("Restore encrypted backup (empty app only)") { askForBackupPassword(false) })
+        outer.addView(text("Keep your backup password safe. Restore only works when this app has no existing reminders. Existing data is never overwritten.",12f))
         outer.addView(button("Check & repair future alerts") {
             val count = store.reconcileFuture()
             engine.flush()
@@ -202,6 +213,140 @@ class MainActivity : Activity() {
             isFillViewport = true
             addView(outer)
         })
+    }
+
+    private fun askForBackupPassword(export: Boolean, verifyOnly: Boolean = false) {
+        if (!export && !verifyOnly && backupRepository.hasUserRecords()) {
+            AlertDialog.Builder(this)
+                .setTitle("Restore blocked to protect existing reminders")
+                .setMessage("This app already contains reminder data. Restore cannot overwrite or merge it. Use a new empty installation and retain the current app.")
+                .setPositiveButton("OK",null).show()
+            return
+        }
+        val inputs=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(32,12,32,12)
+        }
+        val pass=EditText(this).apply {
+            hint="Backup passphrase"
+            inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            isSingleLine=true
+        }
+        inputs.addView(pass)
+        val confirm=if(export) EditText(this).apply {
+            hint="Confirm passphrase"
+            inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            isSingleLine=true
+        } else null
+        if(confirm != null) inputs.addView(confirm)
+        AlertDialog.Builder(this)
+            .setTitle(when {
+                export -> "Create encrypted backup"
+                verifyOnly -> "Verify backup safely"
+                else -> "Restore encrypted backup"
+            })
+            .setMessage(when {
+                export -> "Use a unique passphrase of at least 12 characters. If forgotten, the exported backup cannot be recovered."
+                verifyOnly -> "Checks your file and password without importing or altering any reminders."
+                else -> "The correct password is required. Restoring does not copy Android alarm permissions or OS registrations."
+            })
+            .setView(inputs)
+            .setNegativeButton("Cancel",null)
+            .setPositiveButton(if(export) "Choose backup location" else "Choose backup file") { _, _ ->
+                val chosen=pass.text.toString()
+                if(chosen.isBlank() || export && chosen.length<12) {
+                    toast("Enter a passphrase of at least 12 characters for export")
+                    return@setPositiveButton
+                }
+                if(export && chosen != confirm?.text?.toString()) {
+                    toast("Passphrases do not match")
+                    return@setPositiveButton
+                }
+                pendingBackupPassword?.fill('\u0000')
+                pendingBackupPassword=chosen.toCharArray()
+                val intent=if(export) Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type="application/octet-stream"
+                    putExtra(Intent.EXTRA_TITLE,"reminder-os-backup.rpos")
+                } else Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type="*/*"
+                }
+                try { startActivityForResult(intent,when {
+                    export -> REQUEST_EXPORT
+                    verifyOnly -> REQUEST_VERIFY
+                    else -> REQUEST_IMPORT
+                }) }
+                catch (_: ActivityNotFoundException) {
+                    pendingBackupPassword?.fill('\u0000')
+                    pendingBackupPassword=null
+                    toast("System file picker unavailable")
+                }
+            }.show()
+    }
+
+    @Deprecated("Used only for this isolated Android 8+ developer alpha")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode,resultCode,data)
+        if(requestCode != REQUEST_EXPORT && requestCode != REQUEST_IMPORT &&
+            requestCode != REQUEST_VERIFY) return
+        val password=pendingBackupPassword
+        pendingBackupPassword=null
+        if(resultCode != Activity.RESULT_OK || data?.data == null || password == null) {
+            password?.fill('\u0000')
+            return
+        }
+        val uri=data.data!!
+        try {
+            if(requestCode == REQUEST_EXPORT) {
+                val sealed=backupRepository.exportEncrypted(password)
+                try {
+                    contentResolver.openOutputStream(uri,"w")?.use { it.write(sealed); it.flush() }
+                        ?: throw IllegalStateException("Cannot write the selected document")
+                    toast("Encrypted backup saved. Keep the passphrase safe.")
+                } finally { sealed.fill(0) }
+            } else {
+                val encrypted=contentResolver.openInputStream(uri)?.use { input ->
+                    val out=ByteArrayOutputStream()
+                    val chunk=ByteArray(8192)
+                    while(true) {
+                        val n=input.read(chunk)
+                        if(n<0) break
+                        out.write(chunk,0,n)
+                        require(out.size() <= EncryptedBackup.MAX_FILE_BYTES) {
+                            "Backup exceeds supported size limit"
+                        }
+                    }
+                    out.toByteArray()
+                } ?: throw IllegalStateException("Cannot read backup file")
+                try {
+                    if(requestCode == REQUEST_VERIFY) {
+                        val result=backupRepository.inspectEncrypted(encrypted,password)
+                        AlertDialog.Builder(this)
+                            .setTitle("Backup verified")
+                            .setMessage(result)
+                            .setPositiveButton("OK",null).show()
+                    } else {
+                        val imported=backupRepository.importEncrypted(encrypted,password)
+                        store.ensureRecurring()
+                        store.recoverFuture()
+                        engine.flush()
+                        render()
+                        toast("Restored $imported occurrences. Future alerts rebuilt.")
+                    }
+                } finally { encrypted.fill(0) }
+            }
+        } catch (e: Exception) {
+            AlertDialog.Builder(this).setTitle("Backup operation not completed")
+                .setMessage(e.message ?: "File could not be processed. Your existing reminders have not been overwritten.")
+                .setPositiveButton("OK",null).show()
+        } finally { password.fill('\u0000') }
+    }
+
+    private companion object {
+        const val REQUEST_EXPORT=7201
+        const val REQUEST_IMPORT=7202
+        const val REQUEST_VERIFY=7203
     }
 
     private fun clearEditor() {
