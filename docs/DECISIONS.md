@@ -98,3 +98,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-063 (PROVISIONAL): Native iOS calendar slot materialization retains separate original-date IDs and per-slot UNKNOWN/DONE/SKIPPED outcomes; a missed date does not block later dates.
 - D-064 (TEMPORARY): iOS local JSON snapshot writes V2 and reads V1 with optional recurrence/occurrence fields; moving both platforms to shared KMP persistence remains a release prerequisite.
 - D-065 (ACCEPTED PRODUCT LIMIT): A rolling seven-slot schedule cannot promise indefinite background recurrence on iOS without app execution. Be explicit about horizon and pending notification caps in app and release notes.
+
+## V0.5a shared recurrence decisions — 2026-10-23
+- D-066 (CANONICAL): The KMP Gregorian calendar model defines local date slot keys and Monday-first weekday bitmask semantics for future native adapters.
+- D-067 (CANONICAL): Logical occurrence identity is (series ID, original YYYY-MM-DD local date), independent of mutable fire time, snooze or revision.
+- D-068 (BOUNDARY): Native OS adapters resolve timezone/DST gaps, exact alarm permissions, OS scheduling and notification presentation; no portable calendar code may invent an epoch instant.
+- D-069 (LIMIT): Matching fixture tests do not mean both native apps call KMP logic at runtime. Separate persistence/Swift framework integration must be developed before claiming shared execution.

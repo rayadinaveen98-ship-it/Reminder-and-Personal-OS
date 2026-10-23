@@ -80,3 +80,8 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 [Native SwiftUI recurrence and independent occurrence tracking](docs/IOS_RECURRENCE_ALPHA_V0_4B.md): daily, selected weekdays, monthly with skip-missing-date behaviour and V1 snapshot compatibility. The rolling iOS notification horizon is bounded and must not be presented as guaranteed unattended recurring delivery; no signed IPA is available.
 
 **iOS V0.4b verified:** [GitHub CI #39934657157](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39934657157) passed all jobs and **15/15 iOS Simulator XCTest**. Artifact `ios-reminders-persistent-alpha-simulator` is only a simulator build, not a signed iPhone installer. Full background recurring-delivery and shared KMP persistence are not yet implemented.
+
+### V0.5a portable recurrence contract
+[Shared cross-platform calendar and occurrence identity policy](docs/SHARED_RECURRENCE_PARITY_V05A.md) now has matching Android, iOS and Kotlin common test vectors. Native applications still need runtime KMP integration and a durable shared persistence/migration layer; contract parity tests are a safety step, not full parity.
+
+**V0.5a verified:** [Actions #39936693872](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39936693872) passed all four jobs including **20/20 iOS Simulator XCTest** and Kotlin/Android parity tests. Runtime apps still need KMP linkage and safe persistence migrations.
