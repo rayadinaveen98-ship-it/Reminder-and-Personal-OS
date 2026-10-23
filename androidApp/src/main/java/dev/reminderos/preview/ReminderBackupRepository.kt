@@ -132,6 +132,22 @@ internal class ReminderBackupRepository(context: Context) {
     }
 
     /**
+     * Inspect an authenticated backup without touching the database. Useful for
+     * verifying file integrity and the password on a populated device.
+     */
+    fun inspectEncrypted(encrypted: ByteArray, password: CharArray): String {
+        val plain=EncryptedBackup.decrypt(encrypted,password)
+        val root=try { JSONObject(String(plain,StandardCharsets.UTF_8)) }
+                 finally { plain.fill(0) }
+        validate(root)
+        return "Valid encrypted backup\\n" +
+            "Recurring schedules: " + root.getJSONArray("recurrence_rules").length() + "\\n" +
+            "Reminder occurrences: " + root.getJSONArray("reminders").length() + "\\n" +
+            "Action history entries: " + root.getJSONArray("events").length() + "\\n" +
+            "No data was imported or changed."
+    }
+
+    /**
      * Decrypt/validate first, then one SQLite transaction; never replace records
      * in a populated app. Password failures cannot modify the database.
      */
