@@ -394,10 +394,10 @@ final class IOSReminderStore: ObservableObject {
                 .max { $0.dueAt < $1.dueAt }
             let recentResolved = items.filter { $0.outcome != .unknown }
                 .max { $0.dueAt < $1.dueAt }
-            return Array(([overdue, recentResolved].compactMap { $0 } + future.prefix(2))
+            return ([overdue, recentResolved].compactMap { $0 } + Array(future.prefix(2)))
                 .reduce(into: [IOSReminder]()) { out, row in
                     if !out.contains(where: { $0.id == row.id }) { out.append(row) }
-                })
+                }
         }
         return (once + selected).sorted {
             if $0.outcome == .unknown && $1.outcome != .unknown { return true }
