@@ -19,13 +19,13 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // Side-by-side package protects V0.3c data. Future signed alpha builds
+        // Side-by-side package protects V0.3d data. Future signed alpha builds
         // must KEEP this package ID, signing key and increasing versionCode.
-        applicationId = "dev.reminderos.alpha.v03d"
+        applicationId = "dev.reminderos.alpha.v03e"
         minSdk = 26
         targetSdk = 36
-        versionCode = 6
-        versionName = "0.3.0d-alpha"
+        versionCode = 7
+        versionName = "0.3.0e-alpha"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     if (signingConfigured) {
