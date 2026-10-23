@@ -19,13 +19,13 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // Separate V0.5b test package protects prior alpha data. Future signed alpha builds
+        // Separate V0.5d test package preserves all earlier alpha installations. Future signed alpha builds
         // must KEEP this package ID, signing key and increasing versionCode.
-        applicationId = "dev.reminderos.alpha.v05c"
+        applicationId = "dev.reminderos.alpha.v05d"
         minSdk = 26
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.5.0c-alpha"
+        versionCode = 10
+        versionName = "0.5.0d-alpha"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     if (signingConfigured) {
