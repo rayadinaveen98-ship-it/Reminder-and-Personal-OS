@@ -75,3 +75,6 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 
 ### iOS V0.4a native persistence alpha
 [One-time iOS reminder alpha](docs/IOS_PERSISTENT_ALPHA_V0_4A.md) introduces a local, versioned persistent reminder store, native notification Done/Snooze/Skip actions and a SwiftUI reminder list. Distinct from Android's larger SQLite/recurrence feature set and not yet available as a signed iPhone IPA.
+
+### iOS V0.4b recurrence alpha
+[Native SwiftUI recurrence and independent occurrence tracking](docs/IOS_RECURRENCE_ALPHA_V0_4B.md): daily, selected weekdays, monthly with skip-missing-date behaviour and V1 snapshot compatibility. The rolling iOS notification horizon is bounded and must not be presented as guaranteed unattended recurring delivery; no signed IPA is available.
