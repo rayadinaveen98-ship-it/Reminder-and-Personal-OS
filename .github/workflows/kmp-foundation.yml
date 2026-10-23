@@ -63,7 +63,7 @@ jobs:
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-reminder-v03e-debug
+          name: android-reminder-v05b-debug
           path: androidApp/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
@@ -85,6 +85,8 @@ jobs:
         run: xcodebuild -version
       - name: Compile native iOS simulator KMP shared target
         run: gradle --no-daemon :shared:compileKotlinIosSimulatorArm64 --stacktrace
+      - name: Link Kotlin/Native iOS Simulator framework
+        run: gradle --no-daemon :shared:linkDebugFrameworkIosSimulatorArm64 --stacktrace
       - name: Generate Xcode preview project
         run: |
           brew install xcodegen
@@ -97,7 +99,7 @@ jobs:
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath iosApp/DerivedData \
-            CODE_SIGNING_ALLOWED=NO build
+            CODE_SIGNING_ALLOWED=NO ARCHS=arm64 build
       - name: Run iOS reminder persistence XCTest on Simulator
         run: |
           set -euo pipefail
@@ -108,7 +110,7 @@ jobs:
             -configuration Debug \
             -destination "platform=iOS Simulator,id=$SIM_ID" \
             -derivedDataPath iosApp/DerivedData \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_ALLOWED=NO ARCHS=arm64 \
             -parallel-testing-enabled NO test
       - name: Upload iOS simulator XCTest diagnostics
         if: failure()
