@@ -101,7 +101,7 @@ jobs:
       - name: Upload iOS simulator preview
         uses: actions/upload-artifact@v4
         with:
-          name: ios-native-preview-simulator
+          name: ios-reminders-persistent-alpha-simulator
           path: iosApp/DerivedData/Build/Products/Debug-iphonesimulator/ReminderOSPreview.app
           if-no-files-found: error
           retention-days: 7
