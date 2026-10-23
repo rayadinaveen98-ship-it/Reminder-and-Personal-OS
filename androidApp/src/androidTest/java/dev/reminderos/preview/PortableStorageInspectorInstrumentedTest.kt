@@ -68,7 +68,9 @@ class PortableStorageInspectorInstrumentedTest {
             db.addRecurring("Monthly",System.currentTimeMillis()+60_000,"MONTHLY",0)
             val before=count(db,"reminders")
             db.writableDatabase.execSQL(
-                "UPDATE reminders SET slot_key='2026-02-29' WHERE series_id IS NOT NULL"
+                """UPDATE reminders SET slot_key='2026-02-29'
+                   WHERE id=(SELECT id FROM reminders WHERE series_id IS NOT NULL
+                             ORDER BY original_due_at LIMIT 1)"""
             )
             try {
                 AndroidPortableStorageInspector(db).inspect()
