@@ -60,6 +60,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         store.ensureRecurring()
+        store.reconcileFuture() // Non-forced: never duplicates already applied native jobs.
         engine.flush()
         if (::listContainer.isInitialized) render()
     }
@@ -89,7 +90,7 @@ class MainActivity : Activity() {
             setPadding(32, 30, 32, 40)
         }
         outer.addView(text("Reminder & Personal OS", 24f))
-        outer.addView(text("Android V0.3d · Backup and recovery QA", 13f))
+        outer.addView(text("Android V0.3e · Scheduling reliability QA", 13f))
         outer.addView(text("Save real reminders, receive system alerts, and record what happened.", 14f))
         statusLabel = text("")
         outer.addView(statusLabel)
@@ -99,9 +100,9 @@ class MainActivity : Activity() {
         outer.addView(button("Restore encrypted backup (empty app only)") { askForBackupPassword(false) })
         outer.addView(text("Keep your backup password safe. Restore only works when this app has no existing reminders. Existing data is never overwritten.",12f))
         outer.addView(button("Check & repair future alerts") {
-            val count = store.reconcileFuture()
+            val queued = store.reconcileFuture(force = true)
             engine.flush()
-            toast("Rechecked $count active future reminders")
+            toast("Queued $queued future alarm repairs")
             render()
         })
         if (Build.VERSION.SDK_INT >= 33) {
@@ -440,7 +441,11 @@ class MainActivity : Activity() {
 
     private fun render() {
         if (!::listContainer.isInitialized) return
-        statusLabel.text = engine.capabilityText()
+        val health = store.schedulingHealth()
+        statusLabel.text = engine.capabilityText() + "\n" +
+            "Future: " + health.activeFuture + " · Overdue unresolved: " +
+            health.overdueUnknown + " · Pending scheduler jobs: " + health.pendingJobs +
+            " · Failed jobs: " + health.failedJobs
         dueLabel.text = "Due: " + displayDate(selectedDue)
         val (pending, done, skipped) = store.counts()
         countsLabel.text = "Pending " + pending + "  ·  Done " + done + "  ·  Skipped " + skipped
@@ -464,12 +469,10 @@ class MainActivity : Activity() {
                         LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT,1f))
                 }
                 option(if(rule.paused) "Resume" else "Pause") {
+                    val affected = if (!rule.paused)
+                        store.pendingOccurrenceIdsForRoutine(rule.id) else emptyList()
                     if(store.setRoutinePaused(rule.id,!rule.paused)) {
-                        if(!rule.paused) {
-                            for (occ in store.all().filter { it.seriesId == rule.id }) {
-                                ReminderAlarmEngine.dismiss(this,occ.id)
-                            }
-                        }
+                        affected.forEach { ReminderAlarmEngine.dismiss(this,it) }
                         store.ensureRecurring()
                         engine.flush()
                         render()
@@ -485,7 +488,9 @@ class MainActivity : Activity() {
                         .setMessage("Stops all future alerts and retains occurrence history.")
                         .setNegativeButton("Cancel",null)
                         .setPositiveButton("Archive") { _, _ ->
+                            val affected = store.pendingOccurrenceIdsForRoutine(rule.id)
                             if(store.archiveRoutine(rule.id)) {
+                                affected.forEach { ReminderAlarmEngine.dismiss(this,it) }
                                 engine.flush()
                                 render()
                             }

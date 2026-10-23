@@ -83,3 +83,8 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-054 (SECURITY DESIGN): Do not place signing keys or credentials in the repository; signed alpha builds run only manually from trusted main with authorized environment secrets.
 - D-055 (ACCEPTED LIMITATION): Debug-signed test APKs cannot update apps signed with a different certificate; preserve existing user data by separate app IDs until a verified stable signing and migration strategy exists.
 - D-056 (TEST SCOPE): Emulator SQLite tests are not evidence that OS notification delivery or Android file-picker workflows are reliable on a physical phone.
+
+## V0.3e reliability decisions — 2026-10-23
+- D-057 (PROVISIONAL): Queue native REGISTER only once for the same occurrence/revision/time while PENDING/FAILED. Normal resume treats APPLIED as a valid registration; explicit repair and boot can requeue after OS state loss.
+- D-058 (PROVISIONAL): Cancel notifications for all affected pending routine occurrences when pausing/archiving, not only UI-visible occurrences.
+- D-059 (ACCEPTED REPORTING): Internal outbox status and OS alarm callback do not confirm notification visibility or task completion. Keep UNKNOWN user outcomes until explicit action.

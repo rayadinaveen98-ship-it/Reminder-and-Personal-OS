@@ -160,6 +160,31 @@ internal class ReminderDatabase(context: Context) :
             arrayOf(UUID.randomUUID().toString(), reminderId, kind, revision, due, now)
         )
     }
+
+    /**
+     * An existing pending/failed job can already be retried by flush(). For a
+     * normal app resume, an APPLIED registration is also considered sufficient:
+     * do not append another job just because the UI was reopened.
+     *
+     * After an actual device restart (or explicit user repair), OS alarm state
+     * may have disappeared even though APPLIED was durably recorded. In that
+     * case force=true allows one new job while still deduplicating queued work.
+     */
+    private fun ensureRegisterJob(
+        db: SQLiteDatabase, id: String, revision: Int, due: Long,
+        now: Long, force: Boolean
+    ): Boolean {
+        val states = if (force) "'PENDING','FAILED'" else "'PENDING','FAILED','APPLIED'"
+        val alreadyExists = db.rawQuery(
+            "SELECT 1 FROM schedule_jobs WHERE reminder_id=? AND kind='REGISTER' " +
+                "AND revision=? AND fire_at=? AND state IN ($states) LIMIT 1",
+            arrayOf(id, revision.toString(), due.toString())
+        ).use { it.moveToFirst() }
+        if (alreadyExists) return false
+        newJob(db, id, "REGISTER", revision, due, now)
+        return true
+    }
+
     private fun retireRegistrations(db: SQLiteDatabase, id: String) {
         db.execSQL(
             "UPDATE schedule_jobs SET state='SUPERSEDED' WHERE reminder_id=? AND kind='REGISTER' " +
@@ -279,11 +304,11 @@ internal class ReminderDatabase(context: Context) :
                 while (c.moveToNext()) out.add(Triple(c.getString(0), c.getInt(1), c.getLong(2)))
                 out
             }
-            pending.forEach { (id, rev, due) ->
-                retireRegistrations(db, id)
-                newJob(db, id, "REGISTER", rev, due, now)
+            // Reboot invalidates OS alarms, not the SQLite APPLIED row. Requeue
+            // once per current occurrence, but never duplicate a queued retry.
+            pending.count { (id, rev, due) ->
+                ensureRegisterJob(db, id, rev, due, now, force = true)
             }
-            pending.size
         }
     }
 
@@ -300,6 +325,16 @@ internal class ReminderDatabase(context: Context) :
                     c.getInt(4),c.getInt(5)!=0,c.getInt(6)!=0)
             )
             result
+        }
+
+    @Synchronized fun pendingOccurrenceIdsForRoutine(seriesId: String): List<String> =
+        readableDatabase.rawQuery(
+            "SELECT id FROM reminders WHERE series_id=? AND status='PENDING'",
+            arrayOf(seriesId)
+        ).use { c ->
+            val out = mutableListOf<String>()
+            while (c.moveToNext()) out.add(c.getString(0))
+            out
         }
 
     @Synchronized fun rule(id: String): RecurrenceRule? =
@@ -521,27 +556,57 @@ internal class ReminderDatabase(context: Context) :
         }
 
     /** Recheck accepted OS registrations after opening app or recovering. */
-    @Synchronized fun reconcileFuture(): Int {
+    /**
+     * Safe on every app resume. Explicit Repair uses force=true, which retries
+     * previously applied native registrations when Android may have cleared
+     * alarms after settings/OS changes.
+     */
+    @Synchronized fun reconcileFuture(force: Boolean = false): Int {
         val now = System.currentTimeMillis()
         return transaction { db ->
-            val pending = db.rawQuery(
-                "SELECT id,revision,due_at FROM reminders WHERE status='PENDING' AND archived=0 AND paused=0 AND due_at>?",
+            val future = db.rawQuery(
+                "SELECT id,revision,due_at FROM reminders WHERE status='PENDING' " +
+                    "AND archived=0 AND paused=0 AND due_at>?",
                 arrayOf(now.toString())
             ).use { c ->
                 val out = mutableListOf<Triple<String,Int,Long>>()
-                while(c.moveToNext()) out.add(Triple(c.getString(0),c.getInt(1),c.getLong(2)))
+                while (c.moveToNext())
+                    out.add(Triple(c.getString(0),c.getInt(1),c.getLong(2)))
                 out
             }
-            for ((id,revision,due) in pending) {
-                val hasPending = db.rawQuery(
-                    """SELECT 1 FROM schedule_jobs WHERE reminder_id=? AND kind='REGISTER'
-                       AND revision=? AND fire_at=? AND state IN ('PENDING','FAILED') LIMIT 1""",
-                    arrayOf(id,revision.toString(),due.toString())
-                ).use { it.moveToFirst() }
-                if (!hasPending) newJob(db,id,"REGISTER",revision,due,now)
+            future.count { (id, revision, due) ->
+                ensureRegisterJob(db, id, revision, due, now, force)
             }
-            pending.size
         }
+    }
+
+    data class SchedulingHealth(
+        val pendingJobs: Int, val failedJobs: Int,
+        val activeFuture: Int, val overdueUnknown: Int
+    )
+
+    @Synchronized fun schedulingHealth(): SchedulingHealth {
+        val db = readableDatabase
+        val states = db.rawQuery(
+            "SELECT state,COUNT(*) FROM schedule_jobs WHERE state IN ('PENDING','FAILED') GROUP BY state",
+            null
+        ).use { c ->
+            val values = mutableMapOf<String,Int>()
+            while (c.moveToNext()) values[c.getString(0)] = c.getInt(1)
+            values
+        }
+        val now = System.currentTimeMillis()
+        val active = db.rawQuery(
+            "SELECT COUNT(*) FROM reminders WHERE status='PENDING' AND archived=0 AND paused=0 AND due_at>?",
+            arrayOf(now.toString())
+        ).use { it.moveToFirst(); it.getInt(0) }
+        val overdue = db.rawQuery(
+            "SELECT COUNT(*) FROM reminders WHERE status='PENDING' AND archived=0 AND due_at<=?",
+            arrayOf(now.toString())
+        ).use { it.moveToFirst(); it.getInt(0) }
+        return SchedulingHealth(
+            states["PENDING"] ?: 0, states["FAILED"] ?: 0, active, overdue
+        )
     }
 
     @Synchronized fun counts(): Triple<Int, Int, Int> =
