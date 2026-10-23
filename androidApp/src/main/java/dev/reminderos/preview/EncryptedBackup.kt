@@ -46,8 +46,10 @@ internal object EncryptedBackup {
     fun encrypt(plaintext: ByteArray, password: CharArray): ByteArray =
         encryptWithMagic(plaintext, password, magic)
 
-    fun encryptPortable(plaintext: ByteArray, password: CharArray): ByteArray =
-        encryptWithMagic(plaintext, password, portableMagic)
+    fun encryptPortable(plaintext: ByteArray, password: CharArray): ByteArray {
+        requirePortablePassword(password)
+        return encryptWithMagic(plaintext, password, portableMagic)
+    }
 
     private fun encryptWithMagic(plaintext: ByteArray, password: CharArray, magic: ByteArray): ByteArray {
         require(password.size >= 12) { "Use a passphrase of at least 12 characters" }
@@ -66,8 +68,18 @@ internal object EncryptedBackup {
     fun decrypt(data: ByteArray, password: CharArray): ByteArray =
         decryptWithMagic(data, password, magic)
 
-    fun decryptPortable(data: ByteArray, password: CharArray): ByteArray =
-        decryptWithMagic(data, password, portableMagic)
+    fun decryptPortable(data: ByteArray, password: CharArray): ByteArray {
+        requirePortablePassword(password)
+        return decryptWithMagic(data, password, portableMagic)
+    }
+
+    private fun requirePortablePassword(password: CharArray) {
+        // Explicit portable alpha profile: ASCII prevents runtime-specific
+        // Unicode normalization from silently deriving different PBKDF2 keys.
+        require(password.size in 12..128 && password.all { it.code in 32..126 }) {
+            "Portable backup passphrase must be 12-128 printable ASCII characters"
+        }
+    }
 
     private fun decryptWithMagic(data: ByteArray, password: CharArray, magic: ByteArray): ByteArray {
         require(data.size in (magic.size + SALT + NONCE + 16)..MAX_FILE_BYTES) {
