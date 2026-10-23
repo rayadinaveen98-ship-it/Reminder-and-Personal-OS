@@ -65,6 +65,8 @@ final class IOSReminderStore: ObservableObject {
 
     private var readOnlyBecauseLoadFailed = false
 
+    func clearError() { lastError = nil }
+
     private func save(_ newReminders: [IOSReminder], _ newEvents: [IOSReminderEvent]) throws {
         guard !readOnlyBecauseLoadFailed else {
             throw NSError(domain: "ReminderOS", code: 1,
