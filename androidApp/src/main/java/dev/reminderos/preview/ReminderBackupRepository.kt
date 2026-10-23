@@ -19,6 +19,9 @@ import java.nio.charset.StandardCharsets
 internal class ReminderBackupRepository(context: Context) {
     private val store = ReminderDatabase(context.applicationContext)
 
+    /** For deterministic test teardown; do not delete database files while open. */
+    fun close() { store.close() }
+
     private fun cursorArray(cursor: Cursor): JSONArray {
         val out = JSONArray()
         cursor.use { c ->
