@@ -51,3 +51,6 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 [Android V0.3a QA and compatibility notes](docs/ANDROID_ALPHA_V0_3A.md): editing, pause/resume, archive, event history, flexible snooze and manual repair, with additive SQLite migration. The separate app package protects existing v0.2 local data during signing-unstable developer builds; it does **not** migrate data from the parallel v0.2 install.
 
 **Android V0.3a:** [CI build #39895650894](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39895650894) passed. Download expiring GitHub Actions artifact `android-reminder-v03a-debug`, or the APK attached in the development conversation. This side-by-side test package does not import data from the V0.2 install; physical-device QA is pending.
+
+### Android V0.3b recurring reminders
+[Recurrence rules, scope and device QA](docs/ANDROID_ALPHA_V0_3B.md). Repeating schedules use independent per-date records and rolling native alert registration; a missed alert never automatically becomes skipped or blocks the next. This remains a separate developer alpha package, with physical-device validation outstanding.
