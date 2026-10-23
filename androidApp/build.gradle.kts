@@ -52,8 +52,8 @@ android {
     // Android build and root multiplatform Gradle builds are unified.
     sourceSets.named("main") {
         // AGP 9 built-in Kotlin requires AndroidSourceSet.kotlin, not java.
-        kotlin.directories += file("../shared/src/commonMain/kotlin")
-        kotlin.directories += file("../spikes/core-model/src/commonMain/kotlin")
+        kotlin.directories.add("../shared/src/commonMain/kotlin")
+        kotlin.directories.add("../spikes/core-model/src/commonMain/kotlin")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
