@@ -1,6 +1,6 @@
 # Android V0.3b — Recurring Reminder Alpha
 
-**Stage:** Code committed; CI and physical-device validation required.
+**Stage:** Android APK and recurrence unit tests passed in CI; physical-device behaviour remains untested (developer alpha).
 **Date:** 2026-10-23
 **Parent:** V0.3a reminder management
 **Install package:** `dev.reminderos.alpha.v03b` — separate from previous developer builds to protect their local data from signing mismatches.
@@ -63,3 +63,12 @@ V0.3b SQLite schema version 3 adds recurrence rule definitions, nullable per-occ
 2. Sign reproducible developer builds and provide encrypted export/import so user data survives test-build upgrades.
 3. Add recurrence-editing and precise per-occurrence reporting.
 4. Unify native Android persistence with Kotlin Multiplatform and bring iPhone to feature parity.
+
+## Build and test evidence — October 23, 2026
+- [GitHub Actions #39897461506](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39897461506): all four jobs **PASS** — Android KMP/shared compile, native Android `testDebugUnitTest assembleDebug`, shared JVM, portable SQLite contract and iOS Simulator host compilation.
+- Native Android recurrence JUnit suite: **10 test cases** in `RecurrenceScheduleTest.kt` passed as part of `testDebugUnitTest`. Includes leap years, DST spring/fall, weekly weekday masks and nonexistent monthly dates.
+- SQLite schema/history/migration contract: **32 tests passed**.
+- Android Actions artifact: `android-reminder-v03b-debug`, built from source revision `0ab148dc9d53762a9506f743a4a5eceb863107ca`.
+- Extracted debug APK: **925,602 bytes**, SHA-256 `78de6e56c343f2fd96acfa597b43aa3c9e846cea0174f205730268d1747c58f3` (APK archive integrity checked).
+- Android package `dev.reminderos.alpha.v03b`, Android 8.0+ (minSdk 26).
+- This is **not** a signed release / stable app. No delivery, alarm cancellation or database upgrade has been tested on a physical Android device.
