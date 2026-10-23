@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-23  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/v05c-portable-storage-snapshot` (stacked on V0.5b)  
-**Stage:** V0.5c shared storage schema + read-only Android/iOS inspectors verified in CI; actual data migration/shared DB still pending
+**Working branch:** `feature/v05d-portable-encrypted-export` (stacked on V0.5c)  
+**Stage:** V0.5d cross-platform RPOSB2 encrypted export and verification built/tested on Android+iOS; portable import/shared persistent DB still pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -229,3 +229,13 @@ Every active work session starts with reading repo history and open branches. Co
 - V0.5c Android APK artifact `android-reminder-v05c-debug`, **987,640 bytes**, SHA-256 `106ea142d6697cc36a2ad54c646d27b856d4ace2b6a300ef576a5ce7a33e4869`, source commit `3378c1794ddb1fdfcfa5e475fa1d28a094b8819e`; verified manifest and DEX.
 - Separate `dev.reminderos.alpha.v05c` package protects previous installs. No automatic migration, portable iOS backup format, stable signing, or new Android/iOS data sync.
 - Next phase must implement cross-platform portable write/import and tested backups/atomic rollback before changing the underlying databases.
+
+## V0.5d portable backup export and verification — 2026-10-23
+- Added RPOSB2 authenticated portable backup profile with AES-256-GCM and 210k-round PBKDF2-HMAC-SHA256, strict 12–128 printable ASCII passphrase and canonical version-1 reminder/series/event JSON.
+- Android provides encrypted portable export/verification through system document picker, in addition to unchanged legacy RPOSB1 Android encrypted export and empty-store restore.
+- iOS provides password-protected encrypted export to Files and read-only portable backup verification using CryptoKit+CommonCrypto; it never overwrites local JSON.
+- The same independent Python-generated encrypted backup test vector is decrypted by both Android and iOS; both validate incorrect passphrases and tampered ciphertext.
+- [Four-job CI #39947028584](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39947028584) passed including **27/27 iOS simulator tests**.
+- [Android emulator #39947028457](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39947028457) passed **16/16 native tests**.
+- Android V0.5d debug artifact `android-reminder-v05d-debug`: **992,444 bytes**, SHA-256 `c90f7bc83200f7ffc3adda5a80f14dc978639ad8e881dc7f9cf64e1510006bbd`, source commit `0bf3276e2a0c40fb5f00c888050031d1a4d22fdf`. Separate `dev.reminderos.alpha.v05d` package protects prior data.
+- **CRITICAL LIMIT:** No RPOSB2 import, transactional rollback or automatic cross-platform migration; data is EXPORT + VERIFY only. [V0.5d scope and wire format](PORTABLE_ENCRYPTED_BACKUP_V05D.md).

@@ -487,6 +487,16 @@ final class IOSReminderStore: ObservableObject {
             "No reminders were modified, imported or exported."
     }
 
+    /// RPOSB2 exports complete local records and event history but NEVER writes
+    /// over the active iOS store. The caller supplies the file-export destination.
+    func exportPortableEncrypted(passphrase: String) throws -> Data {
+        _ = try inspectMigrationReadiness()
+        let plaintext=try IOSPortableTransfer.encode(
+            rules:recurrenceRules,reminders:reminders,events:events
+        )
+        return try IOSPortableBackupCrypto.encrypt(plaintext,passphrase:passphrase)
+    }
+
     func history(for id: UUID) -> [IOSReminderEvent] {
         events.filter { $0.reminderID == id }
             .sorted { $0.recordedAt > $1.recordedAt }

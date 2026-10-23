@@ -1,8 +1,14 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// iOS V0.4a: native persistent one-time reminders, not yet full KMP parity.
 struct PreviewContentView: View {
     @ObservedObject private var store = IOSReminderStore.shared
+    @State private var portablePassphrase = ""
+    @State private var portableConfirm = ""
+    @State private var portableExport: IOSPortableEncryptedFile? = nil
+    @State private var showingPortableExport = false
+    @State private var showingPortableVerify = false
     @State private var title = ""
     @State private var dueAt = Date().addingTimeInterval(5 * 60)
     @State private var busy = false
@@ -173,6 +179,26 @@ struct PreviewContentView: View {
                     }
                 }
                 Section {
+                    SecureField("Portable backup passphrase (12+ ASCII)",text:$portablePassphrase)
+                    SecureField("Confirm portable backup passphrase",text:$portableConfirm)
+                    Button("Export encrypted portable backup") {
+                        guard portablePassphrase == portableConfirm else {
+                            migrationReport="Passphrases do not match; nothing was exported."
+                            return
+                        }
+                        do {
+                            let encrypted=try store.exportPortableEncrypted(
+                                passphrase:portablePassphrase
+                            )
+                            portableExport=IOSPortableEncryptedFile(encryptedBytes:encrypted)
+                            showingPortableExport=true
+                        } catch {
+                            migrationReport="Portable export failed: " + error.localizedDescription
+                        }
+                    }
+                    Button("Verify portable backup without importing") {
+                        showingPortableVerify=true
+                    }
                     Button("Inspect data migration readiness") {
                         do {
                             migrationReport = try store.inspectMigrationReadiness()
@@ -198,6 +224,42 @@ struct PreviewContentView: View {
             .task {
                 await store.refreshAuthorization()
                 await store.reconcile()
+            }
+            .fileExporter(
+                isPresented:$showingPortableExport,
+                document:portableExport,
+                contentType:.data,
+                defaultFilename:"reminder-os-portable-v2.rpos"
+            ) { result in
+                switch result {
+                case .success:
+                    migrationReport="Encrypted portable backup saved. Keep your password safe."
+                case .failure(let error):
+                    migrationReport="Export canceled or failed: " + error.localizedDescription
+                }
+                portableExport=nil
+            }
+            .fileImporter(
+                isPresented:$showingPortableVerify,
+                allowedContentTypes:[.data],
+                allowsMultipleSelection:false
+            ) { result in
+                do {
+                    let url=try result.get().first!
+                    let scoped=url.startAccessingSecurityScopedResource()
+                    defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                    let size=try url.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? 0
+                    guard size>0 && size<=IOSPortableBackupCrypto.maxFile else {
+                        throw CocoaError(.fileReadTooLarge)
+                    }
+                    let bytes=try Data(contentsOf:url)
+                    migrationReport=try IOSPortableTransfer.inspectEncrypted(
+                        bytes,passphrase:portablePassphrase
+                    )
+                } catch {
+                    migrationReport="Portable verification failed: " +
+                        error.localizedDescription + ". Nothing was imported."
+                }
             }
             .refreshable { await store.reconcile() }
             .alert("Reminder status", isPresented: Binding(

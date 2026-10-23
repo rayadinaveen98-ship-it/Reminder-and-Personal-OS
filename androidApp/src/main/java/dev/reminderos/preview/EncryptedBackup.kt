@@ -23,6 +23,7 @@ import javax.crypto.spec.SecretKeySpec
  */
 internal object EncryptedBackup {
     private val magic = "RPOSB1".toByteArray(StandardCharsets.US_ASCII)
+    private val portableMagic = "RPOSB2".toByteArray(StandardCharsets.US_ASCII)
     private const val SALT = 16
     private const val NONCE = 12
     private const val TAG_BITS = 128
@@ -42,7 +43,15 @@ internal object EncryptedBackup {
         } finally { spec.clearPassword() }
     }
 
-    fun encrypt(plaintext: ByteArray, password: CharArray): ByteArray {
+    fun encrypt(plaintext: ByteArray, password: CharArray): ByteArray =
+        encryptWithMagic(plaintext, password, magic)
+
+    fun encryptPortable(plaintext: ByteArray, password: CharArray): ByteArray {
+        requirePortablePassword(password)
+        return encryptWithMagic(plaintext, password, portableMagic)
+    }
+
+    private fun encryptWithMagic(plaintext: ByteArray, password: CharArray, magic: ByteArray): ByteArray {
         require(password.size >= 12) { "Use a passphrase of at least 12 characters" }
         require(plaintext.size in 1..MAX_PLAINTEXT_BYTES) { "Backup data size is unsupported" }
         val salt = ByteArray(SALT).also(random::nextBytes)
@@ -56,7 +65,23 @@ internal object EncryptedBackup {
         return header + ciphertext
     }
 
-    fun decrypt(data: ByteArray, password: CharArray): ByteArray {
+    fun decrypt(data: ByteArray, password: CharArray): ByteArray =
+        decryptWithMagic(data, password, magic)
+
+    fun decryptPortable(data: ByteArray, password: CharArray): ByteArray {
+        requirePortablePassword(password)
+        return decryptWithMagic(data, password, portableMagic)
+    }
+
+    private fun requirePortablePassword(password: CharArray) {
+        // Explicit portable alpha profile: ASCII prevents runtime-specific
+        // Unicode normalization from silently deriving different PBKDF2 keys.
+        require(password.size in 12..128 && password.all { it.code in 32..126 }) {
+            "Portable backup passphrase must be 12-128 printable ASCII characters"
+        }
+    }
+
+    private fun decryptWithMagic(data: ByteArray, password: CharArray, magic: ByteArray): ByteArray {
         require(data.size in (magic.size + SALT + NONCE + 16)..MAX_FILE_BYTES) {
             "Backup file is empty, truncated or too large"
         }

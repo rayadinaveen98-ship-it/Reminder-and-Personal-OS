@@ -116,3 +116,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-075 (SAFETY): Android SQLite and iOS JSON are read-only inputs during compatibility inspections; no import/write until tested backups, atomic migrations and rollback exist.
 - D-076 (NORMALIZATION): Android PENDING and iOS UNKNOWN both map to portable UNKNOWN; explicit Done/Skipped remain distinct. Historical unused weekday-mask bits for nonweekly schedules are normalized without altering legacy source.
 - D-077 (LIMIT): iOS per-record field checks use the native Kotlin framework, but cross-record checks are Swift until a full Kotlin snapshot importer bridges native collections.
+
+## V0.5d interoperable backup profile — 2026-10-23
+- D-078 (PROVISIONAL): RPOSB2 portable backups use PBKDF2-HMAC-SHA256 210,000 rounds, authenticated 34-byte header, AES-256-GCM and canonical portable JSON V1; legacy Android RPOSB1 files remain separate/unchanged.
+- D-079 (TEMPORARY): Require 12–128 printable ASCII password characters to avoid nonmatching Unicode normalization on JVM and Apple runtimes; later Unicode support needs a new explicit crypto profile.
+- D-080 (SAFETY GATE): RPOSB2 portable export and read-only verification are available on both apps; importing/restoring such files is deliberately unavailable until atomic transaction, backup-before-import, unchanged-source, rollback and post-import verification are tested.
+- D-081 (VERIFIED): [KMP CI #39947028584](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39947028584) passed with 27 iOS simulator tests and [emulator #39947028457](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39947028457) passed 16 native Android tests. Same independent AES-GCM fixture decrypted by both.
