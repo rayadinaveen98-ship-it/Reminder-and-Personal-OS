@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-23  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/v05b-kmp-native-runtime-adapters` (stacked on V0.5a)  
-**Stage:** V0.5b native Android/iOS recurrence now executes shared Kotlin; build, 20 iOS simulator and 10 Android emulator tests pass; shared persistent database still pending
+**Working branch:** `feature/v05c-portable-storage-snapshot` (stacked on V0.5b)  
+**Stage:** V0.5c canonical KMP data model and read-only Android/iOS migration inspectors committed; cross-platform database writes/migrations still pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -214,3 +214,11 @@ Every active work session starts with reading repo history and open branches. Co
 - [Android emulator #39939788038](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939788038): 10/10 instrumented SQLite recovery tests passed.
 - Extracted `android-reminder-v05b-debug` APK from source SHA `4b10d9e5995e9292407af0bab40fdd5ad9c01663`, **976,004 bytes**, SHA-256 `c51bdc801226cd809e615075fd6e85f5d1b0613acc7d78ce4913b66931247d8c`. Separate app ID preserves older installations. No automatic data import.
 - See [runtime integration V0.5b report](KMP_RUNTIME_INTEGRATION_V05B.md). This does not yet unify on-device SQLite/JSON persistence, sign stable updates, produce an iPhone IPA, or guarantee perpetual unattended iOS notifications.
+
+## V0.5c shared storage preparation — 2026-10-23
+- Added `PortableStorageSnapshot` (versioned rules, independent reminder outcomes and audit events) in shared Kotlin, with no OS schedule job transport, plus a referential-integrity/uniqueness validator.
+- Added native Android SQLite v3 **read-only** snapshot inspection, preserving hidden archived and recurring entries and audit history; normalizes stale nonweekly weekday masks in-memory.
+- Added iOS JSON V1/V2 in-memory read-only inspection, calling Kotlin/Native `StorageMigrationBridge` for field validation and Swift for cross-row references; no automatic file conversion.
+- Both apps expose an Inspect data migration readiness UI, which changes neither source reminders nor OS registrations.
+- Added 8 shared contract unit tests, 3 Android emulator data-inspection tests and 3 iOS XCTest; CI results pending.
+- [V0.5c scope](PORTABLE_STORAGE_V05C.md): **shared model + read-only migration checks only**, NOT shared production persistence, import/export parity, full migrator or rollback yet.
