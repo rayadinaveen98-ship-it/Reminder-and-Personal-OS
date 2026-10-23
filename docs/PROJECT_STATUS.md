@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
 **Working branch:** `feature/v03b-recurring-occurrences` (stacked on V0.3a)  
-**Stage:** V0.3b recurrence rules and independent occurrence history implemented in Android source; current CI and device tests pending
+**Stage:** Android V0.3b recurrence debug APK verified in CI; physical-device QA, stable signing and iOS reminder parity pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -120,3 +120,10 @@ Every active work session starts with reading repo history and open branches. Co
 - Kotlin JUnit tests added for calendar/DST and Python v2→v3 SQLite migration tests. **CI outcome must be checked before release claims.**
 - V0.3b uses a separate installed package `dev.reminderos.alpha.v03b` to protect v0.3a/v0.2 local data in the absence of stable signing. There is no cross-package data import.
 - See [Android V0.3b QA](ANDROID_ALPHA_V0_3B.md).
+
+## Verified V0.3b build — 2026-10-23
+- [Actions run #39897461506](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39897461506) passed all four CI jobs, including Android JUnit recurrence tests and APK build, 32 SQLite contract/migration tests, shared JVM and iOS Simulator build.
+- Android Actions artifact `android-reminder-v03b-debug`, binary **925,602 bytes**, SHA-256 `78de6e56c343f2fd96acfa597b43aa3c9e846cea0174f205730268d1747c58f3`; APK zip integrity and manifest/classes entries verified.
+- Developer test package `dev.reminderos.alpha.v03b` installs independently of previous alphas. V0.3b does not import V0.3a/V0.2 reminders; never uninstall previous versions without backup.
+- Per-occurrence recurring history is implemented in Android only and is unverified on real devices; native iOS host is still a one-alert preview.
+- Outstanding: production/reproducible APK signing, encrypted export/import, recurring rule editing, travel/DST edge-case validation, real-device battery/reboot testing and full tracking/analytics.
