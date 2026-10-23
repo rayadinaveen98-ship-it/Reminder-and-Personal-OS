@@ -15,8 +15,18 @@ kotlin {
         }
     }
     jvm()
-    iosArm64()
-    iosSimulatorArm64()
+    iosArm64 {
+        binaries.framework {
+            baseName = "ReminderCore"
+            isStatic = true
+        }
+    }
+    iosSimulatorArm64 {
+        binaries.framework {
+            baseName = "ReminderCore"
+            isStatic = true
+        }
+    }
 
     sourceSets {
         commonMain {
