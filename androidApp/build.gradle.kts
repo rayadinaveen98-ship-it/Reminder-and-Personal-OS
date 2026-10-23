@@ -7,14 +7,19 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.reminderos.alpha.v03"
+        applicationId = "dev.reminderos.alpha.v03b"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.3.0a-alpha"
+        versionCode = 4
+        versionName = "0.3.0b-alpha"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+}
+
+// Only calendar logic is unit-tested here. Device delivery still requires QA.
+dependencies {
+    testImplementation("junit:junit:4.13.2")
 }
