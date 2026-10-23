@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-23
 **Branch:** feature/shared-recurrence-parity-contract
-**Status:** source + tests committed; build verification required.
+**Status:** Verified: Kotlin common tests, Android native JUnit, 20 iOS Simulator XCTest, SQLite contracts and all four GitHub CI jobs passed.
 
 ## Context
 
@@ -53,3 +53,10 @@ Tests:
 2. Implement a versioned, durable portable storage schema and migration adapters for the existing Android SQLite and iOS JSON data without destructive resets.
 3. Add twin-device fixture tests that compare the same encoded reminder/recurrence operations and resulting state.
 4. Sign releases securely and conduct iOS/Android real-device notifications + DST/travel QA.
+
+## Verified CI result — October 23, 2026
+- [GitHub Actions run #39936693872](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39936693872): **all 4 jobs passed** (shared JVM, Android native app/Gradle/JUnit, iOS Simulator/KMP/XCTest, portable SQLite contracts).
+- iOS Simulator XCTest: **20/20 tests passed** — 10 existing recurrence tests, 5 existing persistence tests and 5 new cross-platform parity tests.
+- Android `testDebugUnitTest assembleDebug` and shared Kotlin `jvmTest` both passed, including the new 5 native Android parity vectors and 10 common contract tests.
+- Source tested from head `53ae18fab2acac48af7bb0b4e862fcbea975c5e8`. Later documentation-only commits do not change executable code.
+- No new user-visible app feature or signed installer is produced. Android V0.3e runtime and iOS V0.4b native storage remain unchanged; no physical-device notification proof is claimed.
