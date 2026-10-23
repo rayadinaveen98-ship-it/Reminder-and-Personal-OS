@@ -16,8 +16,9 @@ Previous alpha builds have unstable debug APK signing because GitHub runner keys
 - Password-based AES-256-GCM encryption with authenticated header, random 16-byte salt, random 12-byte nonce and PBKDF2-HMAC-SHA256 (210,000 iterations). Export requires at least 12 characters. No passwords or unencrypted backup files are intentionally persisted.
 - Portable versioned JSON plaintext inside the encrypted container. Contains **all** reminder/recurrence rows including archived data, explicit outcomes, original due dates, snoozes and audit events.
 - Native platform registration IDs and pending scheduler operation jobs are *not* exported: these would be invalid in a different installation.
+- **Verify saved backup** opens an encrypted file, authenticates it with the passphrase and validates the record structure, showing counts **without importing or modifying any data**.
 - Restore through `ACTION_OPEN_DOCUMENT`, requiring the correct passphrase, supported backup format and valid schema references.
-- **Restore only into an empty database.** No merge or destructive overwrite. One database transaction inserts all rules, occurrences and events; failures roll back everything.
+- Export uses a consistent database transaction snapshot across rules/reminders/events. **Restore only into an empty database.** No merge or destructive overwrite. One database transaction inserts all rules, occurrences and events; failures roll back everything.
 - Rebuild eligible native future alarm registrations after a successful restore; past due but unanswered reminders remain unresolved.
 - File size capped to about 8 MB to bound memory use. Large account histories may require a later streaming backup format.
 
@@ -33,7 +34,8 @@ Native Android `EncryptedBackupTest` checks encryption roundtrip, random nonces,
 2. Create one-time and repeating reminders, and mark some occurrences Done/Skipped.
 3. Tap **Export encrypted backup**, supply/confirm a unique 12+ character passphrase, and select a safe file location.
 4. Keep the saved `.rpos` backup and passphrase outside the app. Never put either in a public repository or support ticket.
-5. Observe that Restore refuses to run on the populated app, without deleting existing reminders.
+5. Use **Verify saved backup** to select the exported file and enter its passphrase. Confirm that the app displays rule/reminder/event counts and has not changed existing data.
+6. Observe that Restore refuses to run on the populated app, without deleting existing reminders.
 6. On a separate clean V0.3c installation (or a dedicated test device/emulator with no valuable data), choose Restore, select the exported file and enter the password.
 7. Confirm rules, reminders, action history and outstanding future alarms are recreated. Check a recurring reminder's next notification on-device.
 8. Test a wrong passphrase and edited/truncated file: no records should be imported.
