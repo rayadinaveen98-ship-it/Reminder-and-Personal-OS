@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/ios-v04b-recurrence` (stacked on iOS V0.4a)  
-**Stage:** iOS V0.4b repeating reminders compiled; 15 simulator XCTest passed; iPhone signing, background delivery and shared KMP database pending
+**Working branch:** `feature/shared-recurrence-parity-contract` (stacked on iOS V0.4b)  
+**Stage:** V0.5a portable recurrence contract and twin native parity tests implemented; full KMP runtime integration/persistence still pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -195,3 +195,10 @@ Every active work session starts with reading repo history and open branches. Co
 - Android V0.3e remains unchanged and compiled in the same CI run.
 - iOS is still Swift native rather than the shared KMP database; rolling pending notifications may run out without app execution, so perpetual unattended scheduling is not established.
 - Next: recurrence definition editing, reliable iOS native notification strategy, cross-platform persistence, iOS device-signing and physical-device QA.
+
+## V0.5a shared recurrence parity work — 2026-10-23
+- Reused the existing KMP Gregorian date/time/recurrence implementation instead of creating another calendar engine.
+- Added validated `PortableRecurrenceSpec` with cadence, ISO weekday masks, stable logical (series ID, YYYY-MM-DD) occurrence keys and revision/outcome action guards.
+- Added 10 Kotlin common tests and five matching Android native/JUnit and iOS Swift/XCTest date-key cases to detect differing native calendar results before migrating runtime code.
+- Existing iOS V0.4b simulator [run #39934657157](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39934657157) passed 15/15 tests; new parity branch CI must be verified separately.
+- [Contract details and limitations](SHARED_RECURRENCE_PARITY_V05A.md): platform apps still use their native recurrence engines and separate SQLite/JSON stores. This is a compatibility/test milestone, not completed shared persistence or runtime binding.
