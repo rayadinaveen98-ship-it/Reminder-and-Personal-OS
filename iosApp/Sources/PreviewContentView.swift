@@ -6,6 +6,7 @@ struct PreviewContentView: View {
     @State private var title = ""
     @State private var dueAt = Date().addingTimeInterval(5 * 60)
     @State private var busy = false
+    @State private var migrationReport: String? = nil
     @State private var repeatChoice = "Once"
     @State private var weeklyDaysMask = 31
     private let weekdayNames = ["Monday", "Tuesday", "Wednesday", "Thursday",
@@ -17,7 +18,7 @@ struct PreviewContentView: View {
                 Section {
                     Text("Reminder & Personal OS")
                         .font(.title2.bold())
-                    Text("iOS V0.4b · One-time and repeating reminders")
+                    Text("iOS V0.5c · Portable data inspection")
                         .foregroundStyle(.secondary)
                     Text(store.permissionStatus)
                         .font(.footnote)
@@ -172,6 +173,19 @@ struct PreviewContentView: View {
                     }
                 }
                 Section {
+                    Button("Inspect data migration readiness") {
+                        do {
+                            migrationReport = try store.inspectMigrationReadiness()
+                        } catch {
+                            migrationReport = "Migration check failed: " + error.localizedDescription +
+                                ". No existing reminders were changed."
+                        }
+                    }
+                    if let migrationReport {
+                        Text(migrationReport)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                     Button("Check & repair future alerts") {
                         Task { await store.reconcile() }
                     }
