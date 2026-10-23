@@ -72,3 +72,6 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 
 ### Android V0.3e reliability alpha
 [Recovery release notes](docs/ANDROID_ALPHA_V0_3E.md). [Android emulator QA #39903891862](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39903891862) passed 10 instrumentation tests; [standard CI #39903891795](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39903891795) passed all 4 jobs. Download artifact `android-reminder-v03e-debug` while retained; SHA-256 `b9df0634de2688534607601595753930fe76db3f6deccf1d3ed258f683751270`. Still no stable signing, old-app import, or physical-device delivery guarantee.
+
+### iOS V0.4a native persistence alpha
+[One-time iOS reminder alpha](docs/IOS_PERSISTENT_ALPHA_V0_4A.md) introduces a local, versioned persistent reminder store, native notification Done/Snooze/Skip actions and a SwiftUI reminder list. Distinct from Android's larger SQLite/recurrence feature set and not yet available as a signed iPhone IPA.
