@@ -42,18 +42,26 @@ internal class ReminderBackupRepository(context: Context) {
 
     private fun snapshot(): ByteArray {
         val db = store.readableDatabase
-        // No native schedule jobs or platform handles. The backup is portable.
-        val root = JSONObject()
-            .put("backup_format", 1)
-            .put("created_at_ms", System.currentTimeMillis())
-            .put("recurrence_rules", cursorArray(db.rawQuery(
-                "SELECT id,title,anchor_ms,mode,days_mask,paused,archived,created_at,updated_at FROM recurrence_rules",null)))
-            .put("reminders", cursorArray(db.rawQuery(
-                """SELECT id,title,due_at,original_due_at,revision,status,
-                   last_fired_revision,updated_at,paused,archived,series_id,slot_key FROM reminders""", null)))
-            .put("events", cursorArray(db.rawQuery(
-                "SELECT id,reminder_id,kind,revision,at_ms FROM events",null)))
-        return root.toString().toByteArray(StandardCharsets.UTF_8)
+        // Snapshot definitions, occurrences and events under one SQLite
+        // transaction so a concurrent notification action cannot split history.
+        db.beginTransaction()
+        try {
+            // No native schedule jobs or platform handles. These belong to the
+            // current Android installation, never to a portable backup.
+            val root = JSONObject()
+                .put("backup_format", 1)
+                .put("created_at_ms", System.currentTimeMillis())
+                .put("recurrence_rules", cursorArray(db.rawQuery(
+                    "SELECT id,title,anchor_ms,mode,days_mask,paused,archived,created_at,updated_at FROM recurrence_rules",null)))
+                .put("reminders", cursorArray(db.rawQuery(
+                    """SELECT id,title,due_at,original_due_at,revision,status,
+                       last_fired_revision,updated_at,paused,archived,series_id,slot_key FROM reminders""", null)))
+                .put("events", cursorArray(db.rawQuery(
+                    "SELECT id,reminder_id,kind,revision,at_ms FROM events",null)))
+            val result=root.toString().toByteArray(StandardCharsets.UTF_8)
+            db.setTransactionSuccessful()
+            return result
+        } finally { db.endTransaction() }
     }
 
     fun exportEncrypted(password: CharArray): ByteArray {
