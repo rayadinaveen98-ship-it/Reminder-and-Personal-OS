@@ -59,3 +59,5 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 
 ### Android V0.3c backup experiment
 [Password-encrypted Android backup/export/import and QA](docs/ANDROID_ALPHA_V0_3C.md). Restores are accepted only into empty V0.3c installations and do not migrate separately installed older alphas; the Android notification/recurrence engine still needs physical-device reliability verification.
+
+**Android V0.3c APK:** [Actions run #39899394481](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39899394481), artifact `android-reminder-v03c-debug`, checksum `13d14c131ecaf13b8b141dbf5fcd57210ea2c4d2f7902bca9e8cd9d5a0e48f73`. New buttons Export encrypted backup / Verify saved backup / Restore into empty app. Physical-device restore and OS notification reliability are NOT yet verified.
