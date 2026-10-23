@@ -93,3 +93,8 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-060 (TEMPORARY): Native iOS V0.4a uses a versioned atomically written app-private JSON snapshot while the cross-platform KMP database bridge is unimplemented. Incompatible/corrupt files must not be silently overwritten.
 - D-061 (PROVISIONAL): iOS actionable reminder notifications have Done/Skip/Snooze 10m IDs; persist user action before OS cancellation/registration; stale revision callback is ignored.
 - D-062 (LIMIT): Queue at most 48 iOS pending local notifications and transparently explain the cap. Foreground reconciliation is best effort and not a guarantee of background delivery or production-ready recurrence.
+
+## iOS V0.4b — 2026-10-23
+- D-063 (PROVISIONAL): Native iOS calendar slot materialization retains separate original-date IDs and per-slot UNKNOWN/DONE/SKIPPED outcomes; a missed date does not block later dates.
+- D-064 (TEMPORARY): iOS local JSON snapshot writes V2 and reads V1 with optional recurrence/occurrence fields; moving both platforms to shared KMP persistence remains a release prerequisite.
+- D-065 (ACCEPTED PRODUCT LIMIT): A rolling seven-slot schedule cannot promise indefinite background recurrence on iOS without app execution. Be explicit about horizon and pending notification caps in app and release notes.

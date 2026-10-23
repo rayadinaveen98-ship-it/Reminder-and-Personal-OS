@@ -6,6 +6,10 @@ struct PreviewContentView: View {
     @State private var title = ""
     @State private var dueAt = Date().addingTimeInterval(5 * 60)
     @State private var busy = false
+    @State private var repeatChoice = "Once"
+    @State private var weeklyDaysMask = 31
+    private let weekdayNames = ["Monday", "Tuesday", "Wednesday", "Thursday",
+                                "Friday", "Saturday", "Sunday"]
 
     var body: some View {
         NavigationStack {
@@ -13,7 +17,7 @@ struct PreviewContentView: View {
                 Section {
                     Text("Reminder & Personal OS")
                         .font(.title2.bold())
-                    Text("iOS alpha · One-time reminders saved on this device")
+                    Text("iOS V0.4b · One-time and repeating reminders")
                         .foregroundStyle(.secondary)
                     Text(store.permissionStatus)
                         .font(.footnote)
@@ -26,19 +30,85 @@ struct PreviewContentView: View {
                         .textInputAutocapitalization(.sentences)
                         .accessibilityIdentifier("reminderTitle")
                     DatePicker("Due", selection: $dueAt, in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                    Picker("Repeat", selection: $repeatChoice) {
+                        Text("Once").tag("Once")
+                        Text("Daily").tag("Daily")
+                        Text("Weekly").tag("Weekly")
+                        Text("Monthly").tag("Monthly")
+                    }
+                    if repeatChoice == "Weekly" {
+                        ForEach(weekdayNames.indices, id: \.self) { index in
+                            Toggle(weekdayNames[index], isOn: Binding(
+                                get: { weeklyDaysMask & (1 << index) != 0 },
+                                set: { selected in
+                                    if selected { weeklyDaysMask |= 1 << index }
+                                    else { weeklyDaysMask &= ~(1 << index) }
+                                }
+                            ))
+                        }
+                    }
                     Button("Save reminder") {
                         Task {
                             busy = true
-                            let saved = await store.create(title: title, dueAt: dueAt)
+                            let saved: Bool
+                            switch repeatChoice {
+                            case "Daily", "Weekly", "Monthly":
+                                let mode: IOSRepeatPattern = repeatChoice == "Daily" ? .daily :
+                                    (repeatChoice == "Weekly" ? .weekly : .monthly)
+                                saved = await store.createRecurring(
+                                    title: title, dueAt: dueAt, pattern: mode,
+                                    weekdayMask: weeklyDaysMask
+                                )
+                            default:
+                                saved = await store.create(title: title, dueAt: dueAt)
+                            }
                             if saved {
                                 title = ""
                                 dueAt = Date().addingTimeInterval(5 * 60)
+                                repeatChoice = "Once"
                             }
                             busy = false
                         }
                     }
                     .disabled(busy || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("saveReminder")
+                }
+                if !store.activeRules.isEmpty {
+                    Section("Repeating schedules") {
+                        ForEach(store.activeRules) { rule in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(rule.title).font(.headline)
+                                Text(IOSCalendarRecurrence.summary(rule))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text(rule.paused ? "Paused" : "Active")
+                                    .font(.caption)
+                                HStack {
+                                    Button(rule.paused ? "Resume" : "Pause") {
+                                        Task {
+                                            await store.setRoutinePaused(id: rule.id,
+                                                                         paused: !rule.paused)
+                                        }
+                                    }
+                                    NavigationLink("History") {
+                                        List(store.routineHistory(id: rule.id)) { instance in
+                                            VStack(alignment: .leading) {
+                                                Text(instance.originalDueAt, style: .date)
+                                                Text(instance.outcome.rawValue)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
+                                        .navigationTitle("Occurrence history")
+                                    }
+                                    Button("Archive", role: .destructive) {
+                                        Task { await store.archiveRoutine(id: rule.id) }
+                                    }
+                                }
+                                .font(.caption)
+                                .buttonStyle(.bordered)
+                            }
+                        }
+                    }
                 }
                 Section("Your reminders") {
                     if store.visibleReminders.isEmpty {
@@ -49,6 +119,11 @@ struct PreviewContentView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(reminder.title)
                                 .font(.headline)
+                            if reminder.seriesID != nil {
+                                Text("Repeating · \(reminder.slotKey ?? "")")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                             Text(reminder.dueAt, style: .date)
                                 .font(.subheadline)
                             Text(reminder.dueAt, style: .time)
@@ -86,10 +161,12 @@ struct PreviewContentView: View {
                                 .navigationTitle("Reminder history")
                             }
                             .font(.caption)
-                            Button("Archive", role: .destructive) {
-                                Task { await store.archive(id: reminder.id) }
+                            if reminder.seriesID == nil {
+                                Button("Archive", role: .destructive) {
+                                    Task { await store.archive(id: reminder.id) }
+                                }
+                                .font(.caption)
                             }
-                            .font(.caption)
                         }
                         .padding(.vertical, 5)
                     }
@@ -98,7 +175,7 @@ struct PreviewContentView: View {
                     Button("Check & repair future alerts") {
                         Task { await store.reconcile() }
                     }
-                    Text("Unanswered reminders stay unresolved. iOS notification timing, Focus settings and delivery are controlled by the operating system.")
+                    Text("Each repeating date has its own outcome. Unanswered reminders remain unresolved; this alpha pre-schedules a limited rolling window and needs the app reopened to replenish after long absences. iOS Focus and notification settings still affect delivery.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

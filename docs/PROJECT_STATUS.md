@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/ios-persistent-reminders-alpha` (stacked on Android V0.3e)  
-**Stage:** iOS V0.4a local persistent one-time reminders and notification actions implemented; Xcode simulator CI pending
+**Working branch:** `feature/ios-v04b-recurrence` (stacked on iOS V0.4a)  
+**Stage:** iOS V0.4b repeating reminders compiled; 15 simulator XCTest passed; iPhone signing, background delivery and shared KMP database pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -180,3 +180,18 @@ Every active work session starts with reading repo history and open branches. Co
 - Best-effort pending notification reconciliation on app launch/foreground/actions, with maximum 48 outstanding alerts. Unknown/ignored reminders remain unresolved.
 - Separate iOS alpha bundle ID `dev.reminderos.iosalpha`; prior simulator-only preview remains logically separate.
 - [iOS V0.4a scope and limitations](IOS_PERSISTENT_ALPHA_V0_4A.md). This is NOT full Android parity: no recurrence, cross-platform database bridge, encrypted backups, iPhone signed app or physical-device evidence. Native iOS CI pending.
+
+## iOS V0.4b recurrence — 2026-10-23
+- iOS V0.4a [run #39931842373](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39931842373) passed all four standard CI jobs including **5 iOS persistence XCTests**.
+- Added native calendar recurrence for daily, selected-weekday and monthly schedules, original local date slot IDs and independent occurrence outcomes.
+- Added SwiftUI routine creation, weekday selection, Pause/Resume/Archive and routine history.
+- Evolved persisted iOS JSON snapshot V1→V2 read compatibility; write atomically. Added 10 calendar/recurrence/migration XCTest cases.
+- Rolling bounded seven-future-occurrences per routine + 30-day catch-up; notification limit 48. **Unattended perpetual delivery beyond the preloaded horizon is not guaranteed on iOS.**
+- [V0.4b scope, caveats and verification](IOS_RECURRENCE_ALPHA_V0_4B.md). This is native Swift, not a completed KMP cross-platform shared store, and not a signed physical-iPhone app.
+
+## V0.4b verified simulator milestone — 2026-10-23
+- [CI run #39934657157](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39934657157) passed all 4 jobs including **15/15 iOS simulator tests**: ten new recurrence/V1 snapshot cases plus five earlier one-time persistence tests.
+- Xcode-generated iOS simulator app available as `ios-reminders-persistent-alpha-simulator` workflow artifact; not a signed iPhone IPA.
+- Android V0.3e remains unchanged and compiled in the same CI run.
+- iOS is still Swift native rather than the shared KMP database; rolling pending notifications may run out without app execution, so perpetual unattended scheduling is not established.
+- Next: recurrence definition editing, reliable iOS native notification strategy, cross-platform persistence, iOS device-signing and physical-device QA.
