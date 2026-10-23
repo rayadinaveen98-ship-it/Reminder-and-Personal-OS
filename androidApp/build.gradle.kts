@@ -50,10 +50,11 @@ android {
     // source files used by :shared. No copied/rewritten recurrence logic.
     // Replace this source bridge with a binary KMP module dependency when the
     // Android build and root multiplatform Gradle builds are unified.
-    sourceSets.getByName("main").java.srcDirs(
-        "../shared/src/commonMain/kotlin",
-        "../spikes/core-model/src/commonMain/kotlin"
-    )
+    sourceSets.named("main") {
+        // AGP 9 built-in Kotlin requires AndroidSourceSet.kotlin, not java.
+        kotlin.directories += file("../shared/src/commonMain/kotlin")
+        kotlin.directories += file("../spikes/core-model/src/commonMain/kotlin")
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
