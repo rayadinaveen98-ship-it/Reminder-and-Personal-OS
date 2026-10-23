@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/v03a-reminder-management` (stacked on v0.2 Android alpha)  
-**Stage:** Android V0.3a APK built in CI; SQLite migration contract verified; on-device validation and recurring reminders pending
+**Working branch:** `feature/v03b-recurring-occurrences` (stacked on V0.3a)  
+**Stage:** V0.3b recurrence rules and independent occurrence history implemented in Android source; current CI and device tests pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -110,3 +110,13 @@ Every active work session starts with reading repo history and open branches. Co
 - Android alpha V0.3a APK artifact: `android-reminder-v03a-debug`, **909,102 bytes**, SHA-256 `b5f86f7b9ac69597c5dc1d84ae0364dcd0b0b1e74ea333aea1c635c912855b8c`.
 - Package `dev.reminderos.alpha.v03` is isolated to preserve V0.2 installation and local data despite non-reproducible CI debug signing. The apps do not exchange their user data.
 - On-device tests of edit/pause/archive/notification cancellation/boot recovery are **still pending**. Cross-platform persistence, recurring rules, backup/export and stable signing remain incomplete.
+
+## V0.3b recurrence implementation — 2026-10-23
+- Android-specific calendar engine handles once/daily/weekly-selected-days/monthly (skipping invalid dates) using local calendar arithmetic instead of fixed 24-hour intervals.
+- SQLite v3 adds recurrence rules and immutable per-date occurrence IDs linked via nullable `series_id` and unique `slot_key`.
+- Each occurrence records its own Done/Skip/unknown state; a missed date cannot block a later due slot.
+- Rolling scheduling targets seven future occurrences, with bounded overdue catch-up. Materialization runs after creating a rule, alarm callback, app reopen and supported recovery broadcasts.
+- Routine-level pause/resume/archive; per-occurrence actions; summarized routine history; developer UI for repeat selection.
+- Kotlin JUnit tests added for calendar/DST and Python v2→v3 SQLite migration tests. **CI outcome must be checked before release claims.**
+- V0.3b uses a separate installed package `dev.reminderos.alpha.v03b` to protect v0.3a/v0.2 local data in the absence of stable signing. There is no cross-package data import.
+- See [Android V0.3b QA](ANDROID_ALPHA_V0_3B.md).
