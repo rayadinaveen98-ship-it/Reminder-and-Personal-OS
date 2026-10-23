@@ -66,3 +66,6 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 [Android V0.3d device tests and safe signing plan](docs/ANDROID_ALPHA_V0_3D.md). Android SQLite backup/restore instrumented tests added, plus a guarded/manual secret-backed signing workflow. This developer build retains a separate package ID; stable signing is **not configured** and full phone export/restore QA is pending.
 
 **V0.3d verified QA:** [3 native Android SQLite backup/recovery tests passed on emulator](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39902092344); [all four standard CI jobs passed](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39902092246). APK `android-reminder-v03d-debug`, SHA-256 `ec595e3c69d5f99938161cdc2c037b9bd5004bc99d7528793a4e8f8be57c5b90`. Optional signed-alpha workflow requires private secrets and reviewed code on main; it has **not** issued a signed release.
+
+### Android V0.3e scheduling reliability
+[Outbox recovery fixes, Android emulator regression tests and device QA](docs/ANDROID_ALPHA_V0_3E.md). Normal app resume now avoids duplicate scheduling jobs, while explicit repair and reboot reconciliation can restore missing native alarms. Developer test build: no automatic migration from prior installed alpha apps.
