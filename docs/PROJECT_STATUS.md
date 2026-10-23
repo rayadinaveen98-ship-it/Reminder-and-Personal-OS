@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/android-reminder-alpha-apk` (stacked on portable persistence prototype)  
-**Stage:** Android Alpha 0.2 installable debug APK compiled; on-device reliability and iOS feature parity pending
+**Working branch:** `feature/v03a-reminder-management` (stacked on v0.2 Android alpha)  
+**Stage:** Android V0.3a APK built in CI; SQLite migration contract verified; on-device validation and recurring reminders pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -97,3 +97,16 @@ Every active work session starts with reading repo history and open branches. Co
 - See [Android Alpha v0.2 QA and limitations](ANDROID_ALPHA_V0_2.md). **No physical-device notification delivery has been verified.**
 - Current Android alpha persistence is separate from shared KMP/portable reference implementation. iOS remains an independent one-alert preview, not matching the Android alpha functionality.
 - **Next:** on-device test notification permission/Doze/reboot/cancel/snooze; production cross-platform persistence adapter, tested migrations, signed build continuity and feature parity.
+
+## V0.3a reminder management — 2026-10-23
+- Added non-destructive SQLite alpha schema v1 -> v2 migration (paused/archived flags; existing reminder/action/job rows preserved) and Python contract tests that exercise the exact Kotlin ALTER statements.
+- Implemented revision-guarded edit, pause/resume, soft archive, flexible in-app snooze, recent history and manual future-alarm repair.
+- New test app ID `dev.reminderos.alpha.v03` ensures the earlier v0.2 test app remains installed with its existing local data even if CI debug signing differs. **No automatic v0.2-to-v0.3a data transfer** between separately installed packages.
+- [V0.3a scope, QA and limitations](ANDROID_ALPHA_V0_3A.md). One-time reminders only: reliable per-occurrence recurrence across unanswered reminders remains V0.3b work.
+- No claim of APK readiness, unit tests passing, or physical-device reliability until the current CI run and artifact are verified.
+
+## V0.3a build result — 2026-10-23
+- [GitHub Actions #39895650894](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39895650894) passed SQLite (29 tests including V0.2→V0.3a migration contract), JVM, Android preview APK and iOS simulator jobs.
+- Android alpha V0.3a APK artifact: `android-reminder-v03a-debug`, **909,102 bytes**, SHA-256 `b5f86f7b9ac69597c5dc1d84ae0364dcd0b0b1e74ea333aea1c635c912855b8c`.
+- Package `dev.reminderos.alpha.v03` is isolated to preserve V0.2 installation and local data despite non-reproducible CI debug signing. The apps do not exchange their user data.
+- On-device tests of edit/pause/archive/notification cancellation/boot recovery are **still pending**. Cross-platform persistence, recurring rules, backup/export and stable signing remain incomplete.

@@ -2,6 +2,7 @@ package dev.reminderos.preview
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
@@ -22,7 +23,7 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * Android Alpha 0.2: deliberately plain UI for repeatable data and alarm testing.
+ * Android Alpha V0.3a: deliberately plain UI for reminder-management testing.
  * Custom recurring schedules, cross-platform persistence, goals and analysis
  * remain future work. Do not use this preview as a critical alarm service.
  */
@@ -35,6 +36,8 @@ class MainActivity : Activity() {
     private lateinit var countsLabel: TextView
     private lateinit var listContainer: LinearLayout
     private var selectedDue = System.currentTimeMillis() + 60 * 60_000L
+    private var editingId: String? = null
+    private var editingRevision: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,10 +77,16 @@ class MainActivity : Activity() {
             setPadding(32, 30, 32, 40)
         }
         outer.addView(text("Reminder & Personal OS", 24f))
-        outer.addView(text("Android Alpha · Local reminders only", 13f))
+        outer.addView(text("Android V0.3a · Management test build", 13f))
         outer.addView(text("Save real reminders, receive system alerts, and record what happened.", 14f))
         statusLabel = text("")
         outer.addView(statusLabel)
+        outer.addView(button("Check & repair future alerts") {
+            val count = store.reconcileFuture()
+            engine.flush()
+            toast("Rechecked $count active future reminders")
+            render()
+        })
         if (Build.VERSION.SDK_INT >= 33) {
             outer.addView(button("Enable notification permission") {
                 requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 41)
@@ -93,7 +102,7 @@ class MainActivity : Activity() {
         }
 
         addSpace(outer, 18)
-        outer.addView(text("Create reminder", 19f))
+        outer.addView(text("Create or edit reminder", 19f))
         titleInput = EditText(this).apply {
             hint = "What should I remind you about?"
             setSingleLine(true)
@@ -105,7 +114,7 @@ class MainActivity : Activity() {
         dueLabel = text("")
         outer.addView(dueLabel)
         outer.addView(button("Choose date and time") { pickDue() })
-        outer.addView(button("Save reminder") {
+        outer.addView(button("Save reminder / Save changes") {
             val title = titleInput.text.toString().trim()
             when {
                 title.isBlank() -> toast("Enter a reminder title")
@@ -113,15 +122,30 @@ class MainActivity : Activity() {
                     toast("Choose a future date and time")
                 else -> {
                     try {
-                        store.add(title, selectedDue)
+                        val edit = editingId
+                        val rev = editingRevision
+                        if (edit == null || rev == null) {
+                            store.add(title, selectedDue)
+                            toast("Reminder saved")
+                        } else {
+                            if (!store.edit(edit, rev, title, selectedDue)) {
+                                toast("Could not edit: reminder was changed or resolved")
+                                render()
+                                return@button
+                            }
+                            ReminderAlarmEngine.dismiss(this, edit)
+                            toast("Reminder updated")
+                        }
                         engine.flush()
-                        titleInput.text.clear()
-                        toast("Reminder saved")
-                        selectedDue = System.currentTimeMillis() + 60 * 60_000L
+                        clearEditor()
                         render()
                     } catch (e: Exception) { toast("Save failed: " + (e.message ?: "Unknown error")) }
                 }
             }
+        })
+        outer.addView(button("Clear form / Cancel edit") {
+            clearEditor()
+            render()
         })
 
         addSpace(outer, 18)
@@ -132,12 +156,81 @@ class MainActivity : Activity() {
         outer.addView(listContainer)
         addSpace(outer, 15)
         outer.addView(text(
-            "This early build supports one-time reminders only. Notifications may be delayed by the OS. " +
-                "Overdue and unanswered reminders stay unresolved until you act.", 13f))
+            "V0.3a management test build: one-time reminders, edits, pause and archive. " +
+                "Notifications may be delayed. Unanswered reminders stay unresolved.", 13f))
         setContentView(ScrollView(this).apply {
             isFillViewport = true
             addView(outer)
         })
+    }
+
+    private fun clearEditor() {
+        editingId = null
+        editingRevision = null
+        titleInput.text.clear()
+        selectedDue = System.currentTimeMillis() + 60 * 60_000L
+    }
+
+    private fun editItem(item: ReminderRecord) {
+        editingId = item.id
+        editingRevision = item.revision
+        titleInput.setText(item.title)
+        selectedDue = if (item.dueAt > System.currentTimeMillis() + 1000L)
+            item.dueAt else System.currentTimeMillis() + 60 * 60_000L
+        render()
+        titleInput.requestFocus()
+        toast("Edit in the form above, then Save changes")
+    }
+
+    private fun archiveItem(item: ReminderRecord) {
+        AlertDialog.Builder(this)
+            .setTitle("Archive reminder?")
+            .setMessage("This hides the reminder from the list, cancels its future alert, and retains its history.")
+            .setNegativeButton("Keep", null)
+            .setPositiveButton("Archive") { _, _ ->
+                if (store.archive(item.id, item.revision)) {
+                    ReminderAlarmEngine.dismiss(this, item.id)
+                    engine.flush()
+                    if (editingId == item.id) clearEditor()
+                    render()
+                } else toast("Reminder changed; reload and try again")
+            }.show()
+    }
+
+    private fun snoozeItem(item: ReminderRecord) {
+        val choices = arrayOf("5 minutes", "10 minutes", "30 minutes", "60 minutes")
+        val durations = intArrayOf(5, 10, 30, 60)
+        AlertDialog.Builder(this)
+            .setTitle("Snooze reminder")
+            .setItems(choices) { _, index ->
+                applyAction(item, "SNOOZE", durations[index])
+            }.show()
+    }
+
+    private fun showHistory(item: ReminderRecord) {
+        val events = store.recentEvents(item.id)
+        val details = if (events.isEmpty()) "No actions recorded yet"
+            else events.joinToString("\n") { it.kind + " · " + displayDate(it.atMs) }
+        AlertDialog.Builder(this)
+            .setTitle(item.title)
+            .setMessage(details)
+            .setPositiveButton("Close", null)
+            .show()
+    }
+
+    private fun applyAction(item: ReminderRecord, action: String, minutes: Int = 10) {
+        try {
+            if (store.act(item.id, item.revision, action, snoozeMinutes = minutes)) {
+                ReminderAlarmEngine.dismiss(this, item.id)
+                engine.flush()
+                render()
+            } else {
+                toast("Reminder already changed or paused")
+                render()
+            }
+        } catch (e: Exception) {
+            toast("Unable to update: " + (e.message ?: "Unknown error"))
+        }
     }
 
     private fun pickDue() {
@@ -178,34 +271,41 @@ class MainActivity : Activity() {
                 setBackgroundColor(0xffeeeeee.toInt())
             }
             card.addView(text(item.title, 18f))
-            val humanState = if (item.status == "PENDING" && item.dueAt < now)
-                "Overdue · not confirmed" else item.status
+            val humanState = when {
+                item.paused -> "Paused"
+                item.status == "PENDING" && item.dueAt < now -> "Overdue · not confirmed"
+                else -> item.status
+            }
             card.addView(text(displayDate(item.dueAt) + "  ·  " + humanState, 13f))
             if (item.status == "PENDING") {
-                val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-                fun mini(label: String, command: String) {
-                    val b = button(label) {
-                        try {
-                            if (store.act(item.id, item.revision, command)) {
-                                ReminderAlarmEngine.dismiss(this, item.id)
-                                engine.flush()
-                                render()
-                            } else {
-                                toast("Reminder already changed; refresh the list")
-                                render()
-                            }
-                        } catch (e: Exception) {
-                            toast("Unable to update: " + (e.message ?: "Unknown error"))
-                        }
+                if (!item.paused) {
+                    val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                    fun mini(label: String, click: () -> Unit) {
+                        actions.addView(button(label, click),
+                            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                     }
-                    actions.addView(b, LinearLayout.LayoutParams(0,
-                        ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                    mini("Done") { applyAction(item, "DONE") }
+                    mini("Snooze") { snoozeItem(item) }
+                    mini("Skip") { applyAction(item, "SKIP") }
+                    card.addView(actions)
                 }
-                mini("Done", "DONE")
-                mini("Snooze 10m", "SNOOZE")
-                mini("Skip", "SKIP")
-                card.addView(actions)
+                val tools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                fun tool(label: String, click: () -> Unit) {
+                    tools.addView(button(label, click),
+                        LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                }
+                tool("Edit") { editItem(item) }
+                tool(if (item.paused) "Resume" else "Pause") {
+                    if (store.setPaused(item.id, item.revision, !item.paused)) {
+                        ReminderAlarmEngine.dismiss(this, item.id)
+                        engine.flush()
+                        render()
+                    } else toast("Cannot resume an overdue reminder; edit its due time first")
+                }
+                tool("Archive") { archiveItem(item) }
+                card.addView(tools)
             }
+            card.addView(button("History") { showHistory(item) })
             listContainer.addView(card, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ))

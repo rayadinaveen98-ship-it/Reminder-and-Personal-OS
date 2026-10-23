@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Test SQLite schema, recovery and outbox transactions
-        run: python3 -m unittest discover -s tests -p 'test_sqlite_reference.py' -v
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
 
   shared-jvm:
     name: Shared JVM compile and tests
@@ -63,7 +63,7 @@ jobs:
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-reminder-alpha-debug
+          name: android-reminder-v03a-debug
           path: androidApp/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
