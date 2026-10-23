@@ -1,4 +1,5 @@
 import Foundation
+import ReminderCore
 
 /// Pure calendar arithmetic; individual due dates are materialized as
 /// independent occurrence IDs. These are not fixed 24-hour offsets.
@@ -47,12 +48,20 @@ enum IOSCalendarRecurrence {
         let startingPoint = max(rule.anchorAt, after.addingTimeInterval(0.001))
         var day = calendar.startOfDay(for: startingPoint)
         for _ in 0..<4000 {
-            let matches: Bool
-            switch rule.pattern {
-            case .daily: matches = true
-            case .weekly: matches = rule.weekdayMask & (1 << isoDay(day, calendar: calendar)) != 0
-            case .monthly: matches = calendar.component(.day, from: day) == anchorDay
-            }
+            // KMP decides calendar-rule membership. Foundation decides
+            // platform-local wall-clock and DST instant resolution.
+            let original = calendar.dateComponents([.year, .month, .day], from: rule.anchorAt)
+            let candidate = calendar.dateComponents([.year, .month, .day], from: day)
+            let matches = RecurrenceBridge().matchesDate(
+                startYear: Int32(original.year ?? 0),
+                startMonth: Int32(original.month ?? 0),
+                startDay: Int32(original.day ?? 0),
+                mode: rule.pattern.rawValue,
+                weekdayMask: Int32(rule.weekdayMask),
+                year: Int32(candidate.year ?? 0),
+                month: Int32(candidate.month ?? 0),
+                day: Int32(candidate.day ?? 0)
+            )
             if matches,
                let selected = calendar.date(
                    bySettingHour: hour, minute: minute, second: second, of: day,

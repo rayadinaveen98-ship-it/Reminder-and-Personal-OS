@@ -17,6 +17,9 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+    dependencies:
+      - framework: ../shared/build/bin/iosSimulatorArm64/debugFramework/ReminderCore.framework
+        embed: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.reminderos.iosalpha
@@ -33,6 +36,8 @@ targets:
       - path: Tests
     dependencies:
       - target: ReminderOSPreview
+      - framework: ../shared/build/bin/iosSimulatorArm64/debugFramework/ReminderCore.framework
+        embed: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.reminderos.iosalpha.tests

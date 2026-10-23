@@ -1,9 +1,9 @@
 # Project Status
 
-**Last updated:** 2026-10-22  
+**Last updated:** 2026-10-23  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/shared-recurrence-parity-contract` (stacked on iOS V0.4b)  
-**Stage:** V0.5a shared recurrence parity verified (20 iOS simulator tests, Android + KMP + SQLite passed); full runtime KMP/database integration still pending
+**Working branch:** `feature/v05b-kmp-native-runtime-adapters` (stacked on V0.5a)  
+**Stage:** V0.5b native Android/iOS recurrence now executes shared Kotlin; build, 20 iOS simulator and 10 Android emulator tests pass; shared persistent database still pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -206,3 +206,11 @@ Every active work session starts with reading repo history and open branches. Co
 ## V0.5a CI confirmation — 2026-10-23
 - [Run #39936693872](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39936693872): all 4 jobs passed. 20/20 iOS XCTest passed (5 new parity cases), Android native JUnit and shared Kotlin JVM tests passed; SQLite contract passed.
 - This is a verified **portable recurrence model/compatibility milestone**, not actual Android/iOS runtime coupling, merged databases, stable signed updates or physical device certification.
+
+## V0.5b actual KMP runtime integration — 2026-10-23
+- Android V0.5b `RecurrenceSchedule.next` now executes the same `PortableRecurrenceSpec`/date-key Kotlin source used in `:shared` (AGP 9 built-in Kotlin source roots). Native Calendar resolves local timezone/DST instant.
+- iOS `IOSCalendarRecurrence.next` calls `RecurrenceBridge` from a compiled, linked static `ReminderCore` Kotlin/Native framework. Swift Foundation.Calendar retains timezone/DST conversion and UNUserNotificationCenter.
+- [GitHub Actions #39939787871](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939787871): all four CI jobs passed; **20/20 iOS Simulator XCTest passed**, Android `testDebugUnitTest assembleDebug`, KMP JVM and SQLite contracts passed.
+- [Android emulator #39939788038](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939788038): 10/10 instrumented SQLite recovery tests passed.
+- Extracted `android-reminder-v05b-debug` APK from source SHA `4b10d9e5995e9292407af0bab40fdd5ad9c01663`, **976,004 bytes**, SHA-256 `c51bdc801226cd809e615075fd6e85f5d1b0613acc7d78ce4913b66931247d8c`. Separate app ID preserves older installations. No automatic data import.
+- See [runtime integration V0.5b report](KMP_RUNTIME_INTEGRATION_V05B.md). This does not yet unify on-device SQLite/JSON persistence, sign stable updates, produce an iPhone IPA, or guarantee perpetual unattended iOS notifications.

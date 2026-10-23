@@ -2,7 +2,7 @@
 
 A cross-platform **personal reminder, activity tracking, and intelligence system** for Android and iOS.
 
-> Status: **Discovery / architecture proposal**. This repository does **not** yet contain an application build. Product requirements and technology choices remain subject to validation before implementation.
+> Status: **Working cross-platform developer alpha**. Android V0.5b builds as a test APK; iOS V0.4b+ builds for Simulator. Shared Kotlin recurrence executes in both native apps. Production-grade updates, shared persistence, physical-device validation and the broader Personal OS remain unfinished.
 
 ## Product vision
 Help people not just remember commitments, but record what actually happened, identify meaningful patterns, and make better decisions using evidence from their own history.
@@ -85,3 +85,6 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 [Shared cross-platform calendar and occurrence identity policy](docs/SHARED_RECURRENCE_PARITY_V05A.md) now has matching Android, iOS and Kotlin common test vectors. Native applications still need runtime KMP integration and a durable shared persistence/migration layer; contract parity tests are a safety step, not full parity.
 
 **V0.5a verified:** [Actions #39936693872](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39936693872) passed all four jobs including **20/20 iOS Simulator XCTest** and Kotlin/Android parity tests. Runtime apps still need KMP linkage and safe persistence migrations.
+
+### V0.5b verified shared runtime integration
+[Implementation, verified CI and migration limits](docs/KMP_RUNTIME_INTEGRATION_V05B.md). Both native reminder schedulers **execute shared Kotlin calendar membership logic at runtime**; Android resolves dates through Java Calendar and iOS through Foundation.Calendar. [CI #39939787871](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939787871) passed all 4 jobs, including **20/20 iOS simulator tests**; [Android emulator #39939788038](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939788038) passed **10/10 native SQLite tests**. Android artifact `android-reminder-v05b-debug`; SHA-256 `c51bdc801226cd809e615075fd6e85f5d1b0613acc7d78ce4913b66931247d8c`. Data in old alpha packages is **not automatically migrated**; iOS remains simulator-only.

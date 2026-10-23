@@ -19,13 +19,13 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // Side-by-side package protects V0.3d data. Future signed alpha builds
+        // Separate V0.5b test package protects prior alpha data. Future signed alpha builds
         // must KEEP this package ID, signing key and increasing versionCode.
-        applicationId = "dev.reminderos.alpha.v03e"
+        applicationId = "dev.reminderos.alpha.v05b"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.3.0e-alpha"
+        versionCode = 8
+        versionName = "0.5.0b-alpha"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     if (signingConfigured) {
@@ -45,6 +45,15 @@ android {
             }
             isMinifyEnabled = false
         }
+    }
+    // The alpha's standalone Gradle build compiles the EXACT common Kotlin
+    // source files used by :shared. No copied/rewritten recurrence logic.
+    // Replace this source bridge with a binary KMP module dependency when the
+    // Android build and root multiplatform Gradle builds are unified.
+    sourceSets.named("main") {
+        // AGP 9 built-in Kotlin requires AndroidSourceSet.kotlin, not java.
+        kotlin.directories.add("../shared/src/commonMain/kotlin")
+        kotlin.directories.add("../spikes/core-model/src/commonMain/kotlin")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

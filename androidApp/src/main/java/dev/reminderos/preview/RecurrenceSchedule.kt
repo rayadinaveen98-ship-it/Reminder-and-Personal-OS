@@ -1,21 +1,33 @@
 package dev.reminderos.preview
 
+import dev.reminderos.core.CalendarDate
+import dev.reminderos.core.LocalMinute
+import dev.reminderos.core.PortableCadence
+import dev.reminderos.core.PortableRecurrenceSpec
+import dev.reminderos.core.TimeZonePolicy
+import dev.reminderos.core.WallClock
+import dev.reminderos.core.portableOccurrenceKeys
 import java.util.Calendar
 import java.util.TimeZone
 
 /**
- * Calendar-based recurrence uses local wall-clock fields from the anchor.
- * Android preview uses the device time zone at generation time. Fixed-zone
- * schedules and full DST policy/zone-travel coverage are not implemented yet.
+ * Android absolute-time adapter for the shared KMP recurrence contract.
+ *
+ * The calendar date and weekday selection now execute Kotlin Multiplatform
+ * source at runtime. Android java.util.Calendar only resolves the selected
+ * local wall-clock date into an epoch timestamp (DST / system time zone).
  */
 internal object RecurrenceSchedule {
     const val DAILY = "DAILY"
     const val WEEKLY = "WEEKLY"
     const val MONTHLY = "MONTHLY"
 
-    // ISO weekday bit positions: Monday=bit0 through Sunday=bit6.
-    fun isoWeekday(date: Calendar): Int = (date.get(Calendar.DAY_OF_WEEK) + 5) % 7
-    fun bitForDay(date: Calendar): Int = 1 shl isoWeekday(date)
+    private fun date(c: Calendar): CalendarDate = CalendarDate(
+        c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH)
+    )
+
+    fun isoWeekday(c: Calendar): Int = (c.get(Calendar.DAY_OF_WEEK) + 5) % 7
+    fun bitForDay(c: Calendar): Int = 1 shl isoWeekday(c)
 
     fun next(
         anchorMs: Long,
@@ -27,36 +39,46 @@ internal object RecurrenceSchedule {
         require(mode in setOf(DAILY, WEEKLY, MONTHLY))
         require(mode != WEEKLY || daysMask in 1..127)
         val anchor = Calendar.getInstance(zone).apply { timeInMillis = anchorMs }
-        // Starting from the anchor (instead of a millis duration) prevents
-        // daily repeats drifting after DST transitions.
-        val slot = Calendar.getInstance(zone).apply {
-            timeInMillis = anchorMs
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+        val after = Calendar.getInstance(zone).apply { timeInMillis = maxOf(anchorMs, afterExclusiveMs) }
+        val startDate = maxOf(date(anchor), date(after))
+        // Shared calendarSlots enforces at most 3,660 scanned Gregorian days.
+        val horizon = Calendar.getInstance(zone).apply {
+            timeInMillis = after.timeInMillis
+            add(Calendar.YEAR, 9)
         }
-        val after = maxOf(afterExclusiveMs, anchorMs - 1)
-        val anchorDay = anchor.get(Calendar.DAY_OF_MONTH)
-        for (attempt in 0..4000) {
-            val matches = when (mode) {
-                DAILY -> true
-                WEEKLY -> (bitForDay(slot) and daysMask) != 0
-                MONTHLY -> slot.get(Calendar.DAY_OF_MONTH) == anchorDay
-                else -> false
+        val spec = PortableRecurrenceSpec(
+            seriesId = "android-recurrence-slot",
+            start = date(anchor),
+            clock = WallClock(
+                LocalMinute(anchor.get(Calendar.HOUR_OF_DAY), anchor.get(Calendar.MINUTE)),
+                TimeZonePolicy.FOLLOW_DEVICE
+            ),
+            cadence = PortableCadence.valueOf(mode),
+            weekdayMask = if (mode == WEEKLY) daysMask else 0
+        )
+        val candidates = portableOccurrenceKeys(
+            spec, startDate, date(horizon), maxResults = 128
+        )
+        for (candidate in candidates) {
+            // OS native calendar resolves UTC instant; shared code owns whether
+            // this original local date is logically part of the routine.
+            val native = Calendar.getInstance(zone).apply {
+                clear()
+                isLenient = false
+                set(candidate.date.year, candidate.date.month - 1, candidate.date.day,
+                    anchor.get(Calendar.HOUR_OF_DAY), anchor.get(Calendar.MINUTE), 0)
             }
-            if (matches && slot.timeInMillis > after && slot.timeInMillis >= anchorMs)
-                return slot.timeInMillis
-            slot.add(Calendar.DAY_OF_MONTH, 1)
+            val epoch = try { native.timeInMillis } catch (_: IllegalArgumentException) {
+                // Missing spring DST wall-clock time: skip this occurrence.
+                continue
+            }
+            if (epoch >= anchorMs && epoch > afterExclusiveMs) return epoch
         }
-        throw IllegalArgumentException("No matching occurrence within 4000 days")
+        throw IllegalArgumentException("No valid recurrence slot in the next nine years")
     }
 
-    fun slotKey(epochMs: Long, zone: TimeZone = TimeZone.getDefault()): String {
-        val c = Calendar.getInstance(zone).apply { timeInMillis = epochMs }
-        fun part(v: Int, n: Int) = v.toString().padStart(n, '0')
-        return part(c.get(Calendar.YEAR), 4) + "-" +
-            part(c.get(Calendar.MONTH) + 1, 2) + "-" +
-            part(c.get(Calendar.DAY_OF_MONTH), 2)
-    }
+    fun slotKey(epochMs: Long, zone: TimeZone = TimeZone.getDefault()): String =
+        date(Calendar.getInstance(zone).apply { timeInMillis = epochMs }).toString()
 
     fun description(mode: String, mask: Int = 0): String = when (mode) {
         DAILY -> "Daily"
