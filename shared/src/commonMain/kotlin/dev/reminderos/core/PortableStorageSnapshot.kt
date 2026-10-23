@@ -60,7 +60,7 @@ data class PortableMigrationPreview(
 }
 
 private fun requireId(id: String, label: String) {
-    require(id.isNotBlank() && id.length <= 128 && id.none { it.isISOControl() }) {
+    require(id.isNotBlank() && id.length <= 128 && id.none { it.code < 32 || it.code == 127 }) {
         "Invalid $label identifier"
     }
 }
