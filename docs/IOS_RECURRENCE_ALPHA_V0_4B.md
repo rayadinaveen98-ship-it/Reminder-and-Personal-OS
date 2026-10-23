@@ -1,7 +1,7 @@
 # iOS V0.4b — Calendar recurrence and independent reminder outcomes
 
 **Date:** 2026-10-23  
-**Status:** Implemented in the iOS SwiftUI development branch; simulator tests and app build must pass before verification.
+**Status:** Xcode iOS simulator app build and all 15 XCTest cases verified passing in GitHub Actions; physical-iPhone delivery unverified.
 
 ## Delivered
 
@@ -37,3 +37,10 @@ A native OS notification request does not guarantee on-time presentation. Focus 
 3. Select KMP shared business rules / cross-platform SQLite persistence implementation and test migration from both current local stores.
 4. Plan reliable iOS replenishment within platform background limits, or use suitable native recurring notification triggers without misrepresenting individual occurrence history.
 5. Complete iOS code signing, physical-iPhone notification action, denied permission, DST/travel and reboot QA, then full Personal OS analytics.
+
+## Verified CI — October 23, 2026
+- [KMP / iOS Actions run #39934657157](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39934657157): **all four jobs passed** — iOS shared compilation, SwiftUI simulator app build, Xcode XCTest execution, Android compilation/unit checks, shared JVM, and SQLite contracts.
+- iOS Simulator: **15/15 XCTest passed** (10 new V0.4b calendar/recurrence, history, pause and legacy V1 snapshot compatibility cases, plus 5 V0.4a persistence regressions).
+- Uploaded `ios-reminders-persistent-alpha-simulator` artifact (~6.0 MB) contains an iOS Simulator `.app`; not a signed iPhone IPA.
+- Original Android V0.3e debug app also compiled on this branch without changes to its feature scope.
+- Physical iPhone notification delivery, Focus modes, time zone changes, unattended long-run recurrence and release signing remain unverified. **Do not label this a production-ready recurring-reminder engine.**
