@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/v03b-recurring-occurrences` (stacked on V0.3a)  
-**Stage:** Android V0.3b recurrence debug APK verified in CI; physical-device QA, stable signing and iOS reminder parity pending
+**Working branch:** `feature/v03c-encrypted-backup` (stacked on V0.3b)  
+**Stage:** V0.3c encrypted backup export/import implemented in Android source; CI/physical-device restore validation pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -127,3 +127,11 @@ Every active work session starts with reading repo history and open branches. Co
 - Developer test package `dev.reminderos.alpha.v03b` installs independently of previous alphas. V0.3b does not import V0.3a/V0.2 reminders; never uninstall previous versions without backup.
 - Per-occurrence recurring history is implemented in Android only and is unverified on real devices; native iOS host is still a one-alert preview.
 - Outstanding: production/reproducible APK signing, encrypted export/import, recurring rule editing, travel/DST edge-case validation, real-device battery/reboot testing and full tracking/analytics.
+
+## Encrypted backup V0.3c — 2026-10-23
+- Added authenticated AES-256-GCM password-based portable backup (PBKDF2-HMAC-SHA256, random salt/nonce, bounded payload). No plaintext file writes or password storage are intended.
+- Android system file-picker export/import, all-or-nothing restore into an empty app database, and rebuilding of future scheduling registrations after restore.
+- Exports reminder records, recurring rules and event history, explicitly **not** Android OS alarm handles/operation jobs.
+- Added 10 native JVM/JUnit crypto checks for successful roundtrip, wrong passphrase, tampering, truncated and oversized payloads.
+- Separate alpha package `dev.reminderos.alpha.v03c` protects older package installations. **Earlier V0.2/V0.3a/V0.3b records cannot automatically transfer into V0.3c**; older apps have no backup export.
+- [V0.3c scope and limitations](ANDROID_ALPHA_V0_3C.md). CI build and native device roundtrip not yet verified.
