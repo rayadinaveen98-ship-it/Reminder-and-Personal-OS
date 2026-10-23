@@ -59,3 +59,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-038 (TEMPORARY): Android Alpha v0.2 uses native SQLiteOpenHelper with separate app package to validate actual multiple reminder persistence and actions before full KMP database integration.
 - D-039 (PROPOSED): Native one-time AlarmManager alarms use stable per-reminder PendingIntent URI identity and revision guards to avoid responding to superseded alerts.
 - D-040 (ACCEPTED reporting): Passing debug APK CI is not evidence of device-level reliability; Alpha v0.2 is not suitable for critical alarms. Physical-device QA, migration and backup remain release blockers.
+
+## Android V0.3a decisions — 2026-10-23
+- D-041 (ACCEPTED alpha safety): Use a distinct developer application ID until signing is stable; never advise uninstalling a reminder app without export/backup.
+- D-042 (PROVISIONAL): Paused and archived state extends SQLite v1 through additive migration without destructive table replacement.
+- D-043 (PROVISIONAL): Edit/pause/archive updates are guarded by current reminder revision, cancel previous OS alerts, and preserve history.
+- D-044 (NOT IMPLEMENTED): Repeating schedules require immutable logical occurrences, independent responses and no-response handling before shipping. No pretend recurrence via rewriting a single reminder row.
