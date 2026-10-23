@@ -479,11 +479,11 @@ final class IOSReminderStore: ObservableObject {
         }
         let unresolved = reminders.filter { $0.outcome == .unknown }.count
         let archived = reminders.filter(\.archived).count
-        return "Recurring schedules: \\(recurrenceRules.count)\\n" +
-            "Reminder occurrences: \\(reminders.count)\\n" +
-            "Unanswered occurrences: \\(unresolved)\\n" +
-            "Archived occurrences: \\(archived)\\n" +
-            "Audit events: \\(events.count)\\n\\n" +
+        return "Recurring schedules: \(recurrenceRules.count)\n" +
+            "Reminder occurrences: \(reminders.count)\n" +
+            "Unanswered occurrences: \(unresolved)\n" +
+            "Archived occurrences: \(archived)\n" +
+            "Audit events: \(events.count)\n\n" +
             "No reminders were modified, imported or exported."
     }
 
