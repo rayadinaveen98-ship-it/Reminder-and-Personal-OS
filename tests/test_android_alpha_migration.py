@@ -53,6 +53,7 @@ def legacy_database():
 
 def upgrade(db):
     updates = re.findall(r'db\.execSQL\("(ALTER TABLE reminders ADD COLUMN[^"]+)"\)', SRC)
+    updates = [sql for sql in updates if "paused INTEGER" in sql or "archived INTEGER" in sql]
     if len(updates) != 2:
         raise AssertionError("Expected precisely two v0.2-to-v0.3a additive migration statements")
     db.execute("BEGIN")
