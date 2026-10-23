@@ -39,6 +39,7 @@ enum IOSPortableBackupCrypto {
         try validatePassword(passphrase)
         var result=[UInt8](repeating:0,count:32)
         let passwordBytes=Array(passphrase.utf8)
+        let resultLength=result.count
         let status: Int32 = passwordBytes.withUnsafeBufferPointer { pw in
             salt.withUnsafeBytes { saltRaw in
                 CCKeyDerivationPBKDF(CCPBKDFAlgorithm(kCCPBKDF2),
@@ -47,7 +48,7 @@ enum IOSPortableBackupCrypto {
                     saltRaw.bindMemory(to: UInt8.self).baseAddress,
                     salt.count,
                     CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256),
-                    UInt32(iterations), &result, result.count)
+                    UInt32(iterations), &result, resultLength)
             }
         }
         guard status==kCCSuccess else {
