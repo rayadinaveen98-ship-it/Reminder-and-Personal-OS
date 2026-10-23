@@ -80,7 +80,7 @@ final class IOSReminderStore: ObservableObject {
             IOSReminderSnapshot(version: 1, reminders: newReminders, events: newEvents)
         )
         // Atomically replace snapshot so a crash doesn't truncate all reminders.
-        try data.write(to: url, options: [.atomic, .completeFileProtectionUnlessOpen])
+        try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         reminders = newReminders
         events = newEvents
     }
@@ -235,7 +235,8 @@ final class IOSReminderStore: ObservableObject {
             let fields: Set<Calendar.Component> = [
                 .year, .month, .day, .hour, .minute, .second
             ]
-            let components = Calendar.current.dateComponents(fields, from: due)
+            var components = Calendar.current.dateComponents(fields, from: due)
+            components.timeZone = .current
             let request = UNNotificationRequest(
                 identifier: key, content: content,
                 trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
