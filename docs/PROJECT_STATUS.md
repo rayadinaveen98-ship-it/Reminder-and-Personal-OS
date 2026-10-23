@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/android-reminder-alpha-apk` (stacked on portable persistence prototype)  
-**Stage:** Android Alpha 0.2 installable debug APK compiled; on-device reliability and iOS feature parity pending
+**Working branch:** `feature/v03a-reminder-management` (stacked on v0.2 Android alpha)  
+**Stage:** Android V0.3a reminder management code committed; CI build, migration checks and on-device validation pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -97,3 +97,10 @@ Every active work session starts with reading repo history and open branches. Co
 - See [Android Alpha v0.2 QA and limitations](ANDROID_ALPHA_V0_2.md). **No physical-device notification delivery has been verified.**
 - Current Android alpha persistence is separate from shared KMP/portable reference implementation. iOS remains an independent one-alert preview, not matching the Android alpha functionality.
 - **Next:** on-device test notification permission/Doze/reboot/cancel/snooze; production cross-platform persistence adapter, tested migrations, signed build continuity and feature parity.
+
+## V0.3a reminder management — 2026-10-23
+- Added non-destructive SQLite alpha schema v1 -> v2 migration (paused/archived flags; existing reminder/action/job rows preserved) and Python contract tests that exercise the exact Kotlin ALTER statements.
+- Implemented revision-guarded edit, pause/resume, soft archive, flexible in-app snooze, recent history and manual future-alarm repair.
+- New test app ID `dev.reminderos.alpha.v03` ensures the earlier v0.2 test app remains installed with its existing local data even if CI debug signing differs. **No automatic v0.2-to-v0.3a data transfer** between separately installed packages.
+- [V0.3a scope, QA and limitations](ANDROID_ALPHA_V0_3A.md). One-time reminders only: reliable per-occurrence recurrence across unanswered reminders remains V0.3b work.
+- No claim of APK readiness, unit tests passing, or physical-device reliability until the current CI run and artifact are verified.
