@@ -1,7 +1,7 @@
 # Android V0.3d — Backup Recovery & Signing Readiness
 
 **Date:** 2026-10-23  
-**Status:** Implemented in development branch; CI and Android emulator results require verification.
+**Status:** Android APK, SQLite and emulator recovery tests passed in CI; physical-phone notification and document-picker QA still pending.
 **Install ID:** `dev.reminderos.alpha.v03d` (separate from v0.3c and earlier apps).
 
 ## Scope
@@ -46,3 +46,10 @@ Google Android documentation:
 - **New emulator job must pass** with actual Android export/restore tests and no database overwrite.
 - On a physical device, verify Export → Verify → Restore on a separate empty V0.3d installation, wrong-password rejection and notifications after restore.
 - Record package ID, signing identity, version and database version for each build. Do not claim production readiness solely from emulator/CI results.
+
+## Verified build and Android emulator evidence — 2026-10-23
+- [Android emulator run #39902092344](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39902092344): **PASS** — all 3 Android instrumented tests completed on API 35 / Android 15 emulator. Covers real Android SQLite export→verify→empty restore and rescheduling-job regeneration; wrong-password no-write; populated-database overwrite refusal.
+- [KMP/Android/iOS CI run #39902092246](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39902092246): **all four jobs PASS** (Android debug APK + Android JVM/unit tests, shared Kotlin JVM, portable SQLite suite, and iOS Simulator preview).
+- Android APK artifact `android-reminder-v03d-debug` from branch head `bbc94a45efa57fde3e0ebf85c025aac7960668fc`, **938,126 bytes**, SHA-256 `ec595e3c69d5f99938161cdc2c037b9bd5004bc99d7528793a4e8f8be57c5b90`. ZIP archive integrity, AndroidManifest.xml, and classes.dex verified.
+- The secret-backed signed release workflow is **configuration-only**: no signing key/secrets have been installed and no stable signed release artifact has been built. Android package `dev.reminderos.alpha.v03d` remains independently installed from older alpha packages.
+- No physical-device file-picker end-to-end QA, alarm presentation timing, reboot recovery or OEM battery behavior was verified. This build is a **developer test APK**, not a stable release.
