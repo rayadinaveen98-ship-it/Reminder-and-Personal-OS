@@ -1,0 +1,70 @@
+name: Signed Android Alpha (manual, trusted branch)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-alpha:
+    # Never load signing secrets from untrusted pull requests.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: signed-alpha
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.5.0'
+      - name: Install Android SDK 36
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -path '*/bin/sdkmanager' | sort -V | tail -1)"
+          test -n "$SDKMANAGER"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0"
+      - name: Restore signing keystore securely
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RPOS_ALPHA_KEYSTORE_BASE64 }}
+          KEY_PASSWORD: ${{ secrets.RPOS_ALPHA_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.RPOS_ALPHA_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RPOS_ALPHA_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64" && test -n "$KEY_PASSWORD" && test -n "$STORE_PASSWORD" && test -n "$KEY_ALIAS" || {
+            echo "Signing secrets are not configured. No signed artifact will be created."
+            exit 1
+          }
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/alpha-release.jks"
+          chmod 600 "$RUNNER_TEMP/alpha-release.jks"
+      - name: Build secret-signed release APK
+        env:
+          RPOS_SIGNING_STORE_FILE: ${{ runner.temp }}/alpha-release.jks
+          RPOS_SIGNING_STORE_PASSWORD: ${{ secrets.RPOS_ALPHA_STORE_PASSWORD }}
+          RPOS_SIGNING_KEY_ALIAS: ${{ secrets.RPOS_ALPHA_KEY_ALIAS }}
+          RPOS_SIGNING_KEY_PASSWORD: ${{ secrets.RPOS_ALPHA_KEY_PASSWORD }}
+        run: gradle -p androidApp --no-daemon assembleRelease --stacktrace
+      - name: Verify signed artifact
+        run: |
+          set -euo pipefail
+          APK="$(find androidApp/build/outputs/apk/release -maxdepth 1 -name '*.apk' | head -1)"
+          test -f "$APK"
+          test -n "$ANDROID_HOME"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          "$APKSIGNER" verify --print-certs "$APK"
+          sha256sum "$APK"
+      - name: Upload signed alpha
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-alpha-signed-release
+          path: androidApp/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 7
+      - name: Remove temporary signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/alpha-release.jks"
