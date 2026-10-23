@@ -1,7 +1,7 @@
 # V0.5c — Portable Storage Schema and Read-Only Migration Inspection
 
 **Date:** October 23, 2026  
-**Stage:** Source + tests added; CI checks required before use  
+**Stage:** Android/iOS test builds and 13 Android + 23 iOS emulator/simulator tests verified passing in GitHub Actions  
 **Branch:** `feature/v05c-portable-storage-snapshot`
 
 ## Why we are doing this first
@@ -57,3 +57,11 @@ The SwiftUI app exposes the same read-only inspection. Three new iOS XCTest case
 - Existing Android/JVM/iOS/KMP/SQLite regression suites must remain green.
 
 **A passing read-only preview is not a successful cross-platform migration or a promise of production reliability.**
+
+## Verified implementation evidence — October 23, 2026
+- [Four-job KMP CI #39943474845](https://github.com/rayadinave98-ship-it/Reminder-and-Personal-OS/actions/runs/39943474845): **PASS all 4 jobs** (shared Kotlin JVM tests, portable SQLite reference, Android shared/native debug APK/JUnit, and Xcode iOS Simulator framework/app/test execution).
+- [Android emulator run #39943474863](https://github.com/rayadinave98-ship-it/Reminder-and-Personal-OS/actions/runs/39943474863): **13/13 instrumented Android SQLite tests passed**, including 3 new read-only storage migration inspection tests.
+- Xcode iOS Simulator in the four-job run: **23/23 XCTest passed**, including 3 new JSON-preservation and duplicate-slot inspection cases; zero failures.
+- GitHub debug APK artifact `android-reminder-v05c-debug` (test source commit `3378c1794ddb1fdfcfa5e475fa1d28a094b8819e`). Extracted APK **987,640 bytes**, SHA-256 `106ea142d6697cc36a2ad54c646d27b856d4ace2b6a300ef576a5ce7a33e4869`. ZIP integrity, `AndroidManifest.xml`, and `classes.dex` verified.
+- The Android APK application ID is `dev.reminderos.alpha.v05c`, separate from the V0.5b package. The iOS artifact is a **simulator app** only, not a signed device IPA.
+- Passing tests verify read-only inspection logic, **not** successful data conversion, interoperable encrypted export, stable production updates, physical-device notification delivery, or cloud synchronization.
