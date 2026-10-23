@@ -63,7 +63,7 @@ jobs:
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-reminder-v05b-debug
+          name: android-reminder-v05c-debug
           path: androidApp/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
