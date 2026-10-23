@@ -69,3 +69,6 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 
 ### Android V0.3e scheduling reliability
 [Outbox recovery fixes, Android emulator regression tests and device QA](docs/ANDROID_ALPHA_V0_3E.md). Normal app resume now avoids duplicate scheduling jobs, while explicit repair and reboot reconciliation can restore missing native alarms. Developer test build: no automatic migration from prior installed alpha apps.
+
+### Android V0.3e reliability alpha
+[Recovery release notes](docs/ANDROID_ALPHA_V0_3E.md). [Android emulator QA #39903891862](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39903891862) passed 10 instrumentation tests; [standard CI #39903891795](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39903891795) passed all 4 jobs. Download artifact `android-reminder-v03e-debug` while retained; SHA-256 `b9df0634de2688534607601595753930fe76db3f6deccf1d3ed258f683751270`. Still no stable signing, old-app import, or physical-device delivery guarantee.
