@@ -81,6 +81,12 @@ class MainActivity : Activity() {
         outer.addView(text("Save real reminders, receive system alerts, and record what happened.", 14f))
         statusLabel = text("")
         outer.addView(statusLabel)
+        outer.addView(button("Check & repair future alerts") {
+            val count = store.reconcileFuture()
+            engine.flush()
+            toast("Rechecked $count active future reminders")
+            render()
+        })
         if (Build.VERSION.SDK_INT >= 33) {
             outer.addView(button("Enable notification permission") {
                 requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 41)
