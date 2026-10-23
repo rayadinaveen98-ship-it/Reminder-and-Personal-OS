@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-23  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
 **Working branch:** `feature/v05c-portable-storage-snapshot` (stacked on V0.5b)  
-**Stage:** V0.5c canonical KMP data model and read-only Android/iOS migration inspectors committed; cross-platform database writes/migrations still pending
+**Stage:** V0.5c shared storage schema + read-only Android/iOS inspectors verified in CI; actual data migration/shared DB still pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -222,3 +222,10 @@ Every active work session starts with reading repo history and open branches. Co
 - Both apps expose an Inspect data migration readiness UI, which changes neither source reminders nor OS registrations.
 - Added 8 shared contract unit tests, 3 Android emulator data-inspection tests and 3 iOS XCTest; CI results pending.
 - [V0.5c scope](PORTABLE_STORAGE_V05C.md): **shared model + read-only migration checks only**, NOT shared production persistence, import/export parity, full migrator or rollback yet.
+
+## V0.5c verified read-only migration gate — 2026-10-23
+- [Full CI #39943474845](https://github.com/rayadinave98-ship-it/Reminder-and-Personal-OS/actions/runs/39943474845) passed all four jobs. **23/23 iOS simulator tests passed**; Android native/JUnit and shared Kotlin tests plus SQLite contracts passed.
+- [Emulator QA #39943474863](https://github.com/rayadinave98-ship-it/Reminder-and-Personal-OS/actions/runs/39943474863) passed **13/13 Android SQLite tests** (including three new no-write inspection regressions).
+- V0.5c Android APK artifact `android-reminder-v05c-debug`, **987,640 bytes**, SHA-256 `106ea142d6697cc36a2ad54c646d27b856d4ace2b6a300ef576a5ce7a33e4869`, source commit `3378c1794ddb1fdfcfa5e475fa1d28a094b8819e`; verified manifest and DEX.
+- Separate `dev.reminderos.alpha.v05c` package protects previous installs. No automatic migration, portable iOS backup format, stable signing, or new Android/iOS data sync.
+- Next phase must implement cross-platform portable write/import and tested backups/atomic rollback before changing the underlying databases.
