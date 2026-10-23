@@ -23,3 +23,17 @@ targets:
         ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: NO
         INFOPLIST_KEY_UIApplicationSupportsDocumentBrowser: NO
         SUPPORTS_MACCATALYST: NO
+    scheme:
+      testTargets:
+        - ReminderOSPreviewTests
+  ReminderOSPreviewTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: ReminderOSPreview
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.reminderos.iosalpha.tests
+        GENERATE_INFOPLIST_FILE: YES
