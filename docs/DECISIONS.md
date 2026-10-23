@@ -65,3 +65,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-042 (PROVISIONAL): Paused and archived state extends SQLite v1 through additive migration without destructive table replacement.
 - D-043 (PROVISIONAL): Edit/pause/archive updates are guarded by current reminder revision, cancel previous OS alerts, and preserve history.
 - D-044 (NOT IMPLEMENTED): Repeating schedules require immutable logical occurrences, independent responses and no-response handling before shipping. No pretend recurrence via rewriting a single reminder row.
+
+## Recurrence decisions — 2026-10-23
+- D-045 (PROVISIONAL): Recurring schedules own immutable logical date slots with distinct occurrence IDs; each occurrence keeps an independent response and notification history.
+- D-046 (PROVISIONAL): Pre-materialize seven upcoming slots per schedule and replenish after app open/alarm callback/restart; capped historical backfill, not an unbounded background process.
+- D-047 (PROVISIONAL): Skip nonexistent monthly dates; use device-local calendar wall-clock recurrence, with DST and travel policy validation pending.
+- D-048 (ACCEPTED alpha safety): V0.3b installs alongside prior test packages to avoid losing user data under changing debug-signing keys.
