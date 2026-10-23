@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
 **Working branch:** `feature/v03e-alarm-recovery-hardening` (stacked on V0.3d)  
-**Stage:** V0.3e alarm outbox and routine notification reliability fixes committed; CI/emulator results pending
+**Stage:** V0.3e Android APK and 10 emulator SQLite reliability tests passed; physical-device notifications, stable signing and iOS parity pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -165,3 +165,10 @@ Every active work session starts with reading repo history and open branches. Co
 - Added seven Android emulator SQLite regression tests for idempotency, stale notification actions, per-occurrence series state, pause/archive suppression and reboot recovery.
 - V0.3e uses separate test package `dev.reminderos.alpha.v03e` to preserve V0.3d and older app data; no automatic cross-package import.
 - [V0.3e release scope and QA](ANDROID_ALPHA_V0_3E.md). Build and physical-device delivery still require verification.
+
+## V0.3e verified CI results — 2026-10-23
+- [Actions emulator run #39903891862](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39903891862): **10 Android instrumentation tests passed** (native SQLite recovery, database guardrails, repeat/repair idempotency, stale-action revisions and routine pause).
+- [Standard CI #39903891795](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39903891795): Android build/unit checks, shared JVM, SQLite contract and iOS Simulator builds all passed.
+- APK artifact `android-reminder-v03e-debug`, source `7b7812ac2a6c34a487ae56a2963632ba65999be3`, **940,398 bytes**, SHA-256 `b9df0634de2688534607601595753930fe76db3f6deccf1d3ed258f683751270`, archive integrity verified.
+- Debug test package `dev.reminderos.alpha.v03e` is separate from older installations. Signed release workflow has no owner secrets and no stable-signing claim.
+- Physical-phone background delivery, reboot/exact-alarm behaviour and file-picker flows still require QA; not a stable release.
