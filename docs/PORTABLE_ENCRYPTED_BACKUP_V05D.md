@@ -1,7 +1,7 @@
 # V0.5d — Interoperable Encrypted Portable Backup (Export + Verify)
 
 **Date:** 2026-10-23  
-**Stage:** Android + iOS export/verify implemented; CI validation pending  
+**Stage:** Android and iOS export/verify implemented, compiled and tested in GitHub Actions; physical-device QA and portable import pending  
 **Source:** `feature/v05d-portable-encrypted-export`
 
 ## User-facing features
@@ -75,3 +75,11 @@ Timestamps are integer UTC epoch milliseconds; recurring slot keys are local **Y
 3. Verify import-then-export round-trips on both platforms, with simulated disk errors and corrupted files. Register future OS notifications only after a committed import.
 4. Deliver stable signing and real-phone QA. The Android V0.5d package is a *separate developer alpha*; the iOS artifact is Simulator-only, not a signed iPhone IPA.
 5. Full shared database ownership/merging, synced identities, and unattended iOS recurrence still require work.
+
+## Verified build and interoperability — October 23, 2026
+- [Standard cross-platform CI #39947028584](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39947028584): **all 4 jobs passed** (shared JVM tests, Android KMP/native APK and JUnit, portable SQLite contracts, Kotlin/Native iOS simulator framework and SwiftUI XCTest).
+- iOS simulator: **27/27 XCTest passed**, including four new tests that decrypt the independent Python RPOSB2 ciphertext, reject tampering/wrong passwords, round-trip iOS RPOSB2 encryption and prove export leaves iOS JSON unchanged.
+- [Android emulator #39947028457](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39947028457): **16/16 instrumented tests passed**, including the three new portable encryption tests plus all prior SQLite, backup and scheduling recovery regressions.
+- Android APK artifact `android-reminder-v05d-debug` from source SHA `0bf3276e2a0c40fb5f00c888050031d1a4d22fdf`: extracted **992,444 bytes**, SHA-256 `c90f7bc83200f7ffc3adda5a80f14dc978639ad8e881dc7f9cf64e1510006bbd`. ZIP integrity and AndroidManifest.xml/classes.dex verified.
+- Android bundle ID `dev.reminderos.alpha.v05d` is deliberately separate; iOS simulator app is **not** an installable signed iPhone IPA. Native phone-to-phone file transfer and file picker flows still need physical-device QA. The same independently generated RPOSB2 test fixture was decrypted on both operating-system simulators/emulators; this is strong wire-format compatibility evidence, **not** a completed portable restore.
+- Follow-up documentation-only commits do not change the executable code validated at the source SHA above.
