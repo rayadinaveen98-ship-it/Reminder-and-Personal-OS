@@ -10,7 +10,7 @@ settings:
     INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
     INFOPLIST_KEY_UILaunchScreen_Generation: YES
     CODE_SIGN_STYLE: Automatic
-    PRODUCT_BUNDLE_IDENTIFIER: dev.reminderos.preview
+    PRODUCT_BUNDLE_IDENTIFIER: dev.reminderos.iosalpha
 targets:
   ReminderOSPreview:
     type: application
@@ -19,7 +19,7 @@ targets:
       - path: Sources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: dev.reminderos.preview
+        PRODUCT_BUNDLE_IDENTIFIER: dev.reminderos.iosalpha
         ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: NO
         INFOPLIST_KEY_UIApplicationSupportsDocumentBrowser: NO
         SUPPORTS_MACCATALYST: NO
