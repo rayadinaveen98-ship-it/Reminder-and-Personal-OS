@@ -25,7 +25,7 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * Android Alpha V0.3a: deliberately plain UI for reminder-management testing.
+ * Android Alpha V0.3b: deliberately plain UI for recurrence testing.
  * Custom recurring schedules, cross-platform persistence, goals and analysis
  * remain future work. Do not use this preview as a critical alarm service.
  */
