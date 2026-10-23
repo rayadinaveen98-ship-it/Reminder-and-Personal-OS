@@ -83,3 +83,5 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 
 ### V0.5a portable recurrence contract
 [Shared cross-platform calendar and occurrence identity policy](docs/SHARED_RECURRENCE_PARITY_V05A.md) now has matching Android, iOS and Kotlin common test vectors. Native applications still need runtime KMP integration and a durable shared persistence/migration layer; contract parity tests are a safety step, not full parity.
+
+**V0.5a verified:** [Actions #39936693872](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39936693872) passed all four jobs including **20/20 iOS Simulator XCTest** and Kotlin/Android parity tests. Runtime apps still need KMP linkage and safe persistence migrations.
