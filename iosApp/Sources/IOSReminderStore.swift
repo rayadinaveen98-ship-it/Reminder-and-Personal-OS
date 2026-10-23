@@ -13,6 +13,8 @@ struct IOSReminder: Codable, Identifiable, Equatable {
     var revision: Int
     var outcome: Outcome
     var archived: Bool
+    var seriesID: UUID? = nil
+    var slotKey: String? = nil
 }
 
 struct IOSReminderEvent: Codable, Identifiable {
@@ -27,6 +29,8 @@ struct IOSReminderSnapshot: Codable {
     var version: Int
     var reminders: [IOSReminder]
     var events: [IOSReminderEvent]
+    /// Optional to decode V0.4a's version 1 snapshot without discarding data.
+    var recurrenceRules: [IOSRecurrenceRule]? = nil
 }
 
 @MainActor
@@ -35,6 +39,7 @@ final class IOSReminderStore: ObservableObject {
 
     @Published private(set) var reminders: [IOSReminder] = []
     @Published private(set) var events: [IOSReminderEvent] = []
+    @Published private(set) var recurrenceRules: [IOSRecurrenceRule] = []
     @Published private(set) var permissionStatus = "Checking notification permission…"
     @Published private(set) var lastError: String?
 
@@ -57,9 +62,12 @@ final class IOSReminderStore: ObservableObject {
             let url = fileURL
             if FileManager.default.fileExists(atPath: url.path) {
                 let saved = try JSONDecoder().decode(IOSReminderSnapshot.self, from: Data(contentsOf: url))
-                guard saved.version == 1 else { throw CocoaError(.fileReadCorruptFile) }
+                guard saved.version == 1 || saved.version == 2 else {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
                 reminders = saved.reminders
                 events = saved.events
+                recurrenceRules = saved.recurrenceRules ?? []
             }
         } catch {
             // Do not overwrite a corrupt/unsupported store on the next mutation.
@@ -72,7 +80,11 @@ final class IOSReminderStore: ObservableObject {
 
     func clearError() { lastError = nil }
 
-    private func save(_ newReminders: [IOSReminder], _ newEvents: [IOSReminderEvent]) throws {
+    private func save(
+        _ newReminders: [IOSReminder],
+        _ newEvents: [IOSReminderEvent],
+        _ newRules: [IOSRecurrenceRule]? = nil
+    ) throws {
         guard !readOnlyBecauseLoadFailed else {
             throw NSError(domain: "ReminderOS", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "Stored data needs recovery before editing"])
@@ -82,12 +94,14 @@ final class IOSReminderStore: ObservableObject {
             at: url.deletingLastPathComponent(), withIntermediateDirectories: true
         )
         let data = try JSONEncoder().encode(
-            IOSReminderSnapshot(version: 1, reminders: newReminders, events: newEvents)
+            IOSReminderSnapshot(version: 2, reminders: newReminders,
+                                events: newEvents, recurrenceRules: newRules ?? recurrenceRules)
         )
         // Atomically replace snapshot so a crash doesn't truncate all reminders.
         try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         reminders = newReminders
         events = newEvents
+        if let newRules { recurrenceRules = newRules }
     }
 
     private func identifier(_ id: UUID) -> String { notificationPrefix + id.uuidString }
@@ -149,6 +163,109 @@ final class IOSReminderStore: ObservableObject {
         }
     }
 
+
+    /// Every recurring date has its own persisted ID and UNKNOWN/DONE/SKIPPED
+    /// outcome. Materialize recent missed dates as UNKNOWN without blocking
+    /// the next future date. Only 30 days of historical catch-up is attempted
+    /// to bound work for users who have been offline for years.
+    private func replenishRecurring(now: Date = .now, calendar: Calendar = .current) throws {
+        var updated = reminders
+        var log = events
+        var changed = false
+        let cutoff = now.addingTimeInterval(-30 * 24 * 60 * 60)
+        for rule in recurrenceRules where !rule.archived && !rule.paused {
+            let existing = updated.filter { $0.seriesID == rule.id }
+            var keys = Set(existing.compactMap(\.slotKey))
+            var future = existing.filter { $0.originalDueAt > now }.count
+            var after = max(rule.anchorAt.addingTimeInterval(-1), cutoff.addingTimeInterval(-1))
+            var attempts = 0
+            while future < 7 && attempts < 240 {
+                attempts += 1
+                guard let due = IOSCalendarRecurrence.next(
+                    rule: rule, after: after, calendar: calendar
+                ) else { break }
+                after = due
+                let key = IOSCalendarRecurrence.slotKey(due, calendar: calendar)
+                if keys.contains(key) { continue }
+                keys.insert(key)
+                let reminder = IOSReminder(
+                    id: UUID(), title: rule.title, dueAt: due,
+                    originalDueAt: due, revision: 1,
+                    outcome: .unknown, archived: false,
+                    seriesID: rule.id, slotKey: key
+                )
+                updated.append(reminder)
+                appendEvent(due <= now ? "MISSED_SLOT_UNKNOWN" : "CREATED",
+                            for: reminder, list: &log)
+                changed = true
+                if due > now { future += 1 }
+            }
+        }
+        if changed { try save(updated, log) }
+    }
+
+    func createRecurring(
+        title: String, dueAt: Date, pattern: IOSRepeatPattern, weekdayMask: Int
+    ) async -> Bool {
+        let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 200,
+              dueAt > Date().addingTimeInterval(2),
+              pattern != .weekly || (1...127).contains(weekdayMask) else {
+            lastError = "Enter a title, future time and valid weekday selection."
+            return false
+        }
+        let rule = IOSRecurrenceRule(
+            id: UUID(), title: clean, anchorAt: dueAt,
+            pattern: pattern, weekdayMask: weekdayMask,
+            paused: false, archived: false
+        )
+        do {
+            try save(reminders, events, recurrenceRules + [rule])
+            try replenishRecurring()
+            await reconcile()
+            return true
+        } catch {
+            lastError = "Saving recurring reminder failed: \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    func setRoutinePaused(id: UUID, paused: Bool) async {
+        guard let index = recurrenceRules.firstIndex(where: { $0.id == id }),
+              !recurrenceRules[index].archived,
+              recurrenceRules[index].paused != paused else { return }
+        do {
+            var updated = recurrenceRules
+            updated[index].paused = paused
+            try save(reminders, events, updated)
+            await reconcile()
+        } catch {
+            lastError = "Updating routine failed: \(error.localizedDescription)"
+        }
+    }
+
+    func archiveRoutine(id: UUID) async {
+        guard let index = recurrenceRules.firstIndex(where: { $0.id == id }),
+              !recurrenceRules[index].archived else { return }
+        do {
+            var updated = recurrenceRules
+            updated[index].archived = true
+            try save(reminders, events, updated)
+            await reconcile()
+        } catch {
+            lastError = "Archiving routine failed: \(error.localizedDescription)"
+        }
+    }
+
+    var activeRules: [IOSRecurrenceRule] {
+        recurrenceRules.filter { !$0.archived }
+    }
+
+    func routineHistory(id: UUID) -> [IOSReminder] {
+        reminders.filter { $0.seriesID == id && $0.originalDueAt <= Date() }
+            .sorted { $0.originalDueAt > $1.originalDueAt }
+    }
+
     /// Stale notification action revisions and already resolved reminders are ignored.
     @discardableResult
     func respond(id: UUID, revision: Int, action: String) async -> Bool {
@@ -199,6 +316,8 @@ final class IOSReminderStore: ObservableObject {
     /// 48 pending requests so it does not silently ask the OS for an unbounded set.
     /// Already-due unresolved reminders stay UNKNOWN and are shown as overdue.
     func reconcile() async {
+        do { try replenishRecurring() }
+        catch { lastError = "Replenishing recurring reminders failed: \(error.localizedDescription)" }
         await refreshAuthorization()
         let settings = await center.notificationSettings()
         guard [.authorized, .provisional, .ephemeral].contains(settings.authorizationStatus) else {
@@ -211,8 +330,12 @@ final class IOSReminderStore: ObservableObject {
                 .map { ($0.identifier, $0) }
         )
         let now = Date()
+        let pausedOrArchived = Set(recurrenceRules.filter {
+            $0.paused || $0.archived
+        }.map(\.id))
         let eligible = reminders.filter {
-            !$0.archived && $0.outcome == .unknown && $0.dueAt > now
+            !$0.archived && $0.outcome == .unknown && $0.dueAt > now &&
+            ($0.seriesID == nil || !pausedOrArchived.contains($0.seriesID!))
         }.sorted { $0.dueAt < $1.dueAt }
         let selected = Array(eligible.prefix(48))
         let keep = Set(selected.map { identifier($0.id) })
@@ -255,7 +378,28 @@ final class IOSReminderStore: ObservableObject {
     }
 
     var visibleReminders: [IOSReminder] {
-        reminders.filter { !$0.archived }.sorted {
+        let hidden = Set(recurrenceRules.filter { $0.archived }.map(\.id))
+        let current = reminders.filter {
+            !$0.archived && ($0.seriesID == nil || !hidden.contains($0.seriesID!))
+        }
+        let once = current.filter { $0.seriesID == nil }
+        let grouped = Dictionary(grouping: current.filter { $0.seriesID != nil }) {
+            $0.seriesID!
+        }
+        let now = Date()
+        let selected = grouped.values.flatMap { items -> [IOSReminder] in
+            let future = items.filter { $0.outcome == .unknown && $0.dueAt >= now }
+                .sorted { $0.dueAt < $1.dueAt }
+            let overdue = items.filter { $0.outcome == .unknown && $0.dueAt < now }
+                .max { $0.dueAt < $1.dueAt }
+            let recentResolved = items.filter { $0.outcome != .unknown }
+                .max { $0.dueAt < $1.dueAt }
+            return Array(([overdue, recentResolved].compactMap { $0 } + future.prefix(2))
+                .reduce(into: [IOSReminder]()) { out, row in
+                    if !out.contains(where: { $0.id == row.id }) { out.append(row) }
+                })
+        }
+        return (once + selected).sorted {
             if $0.outcome == .unknown && $1.outcome != .unknown { return true }
             if $0.outcome != .unknown && $1.outcome == .unknown { return false }
             return $0.dueAt < $1.dueAt
