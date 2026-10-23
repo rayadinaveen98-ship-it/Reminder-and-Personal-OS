@@ -42,7 +42,7 @@ class RecurringMigrationTest(unittest.TestCase):
             SRC,re.S)
         self.assertIsNotNone(ddl,"SQLite migration method missing")
         sql=re.findall(r'db\.execSQL\((?:"""(.*?)"""|"([^"]+)")\)',ddl.group(1),re.S)
-        self.assertEqual(4,len(sql))
+        self.assertEqual(5,len(sql))
         for quoted,plain in sql:
             self.db.execute(quoted if quoted else plain)
         self.db.execute("PRAGMA user_version=3")
