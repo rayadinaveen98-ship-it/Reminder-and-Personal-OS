@@ -15,9 +15,10 @@ final class IOSReminderStoreTests: XCTestCase {
     func testCreateThenReloadKeepsUnknownOutcome() async throws {
         let url = try privateURL()
         let store = IOSReminderStore(storageURL: url)
-        XCTAssertTrue(await store.create(
+        let created = await store.create(
             title: "Drink water", dueAt: .now.addingTimeInterval(3600)
-        ))
+        )
+        XCTAssertTrue(created)
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
         let restored = IOSReminderStore(storageURL: url)
         XCTAssertEqual(restored.reminders.count, 1)
@@ -32,16 +33,19 @@ final class IOSReminderStoreTests: XCTestCase {
     func testSnoozePreservesHistoryAndRejectsStaleDone() async throws {
         let url = try privateURL()
         let store = IOSReminderStore(storageURL: url)
-        XCTAssertTrue(await store.create(
+        let created = await store.create(
             title: "Walk", dueAt: .now.addingTimeInterval(3600)
-        ))
+        )
+        XCTAssertTrue(created)
         let first = try XCTUnwrap(store.reminders.first)
-        XCTAssertTrue(await store.respond(
+        let snoozed = await store.respond(
             id: first.id, revision: first.revision, action: "SNOOZE"
-        ))
-        XCTAssertFalse(await store.respond(
+        )
+        XCTAssertTrue(snoozed)
+        let staleDone = await store.respond(
             id: first.id, revision: first.revision, action: "DONE"
-        ))
+        )
+        XCTAssertFalse(staleDone)
         let restored = IOSReminderStore(storageURL: url)
         let record = try XCTUnwrap(restored.reminders.first)
         XCTAssertEqual(record.outcome, .unknown)
@@ -53,12 +57,15 @@ final class IOSReminderStoreTests: XCTestCase {
     func testDonePersistsAndSecondActionIsIgnored() async throws {
         let url = try privateURL()
         let store = IOSReminderStore(storageURL: url)
-        XCTAssertTrue(await store.create(
+        let created = await store.create(
             title: "Study", dueAt: .now.addingTimeInterval(3600)
-        ))
+        )
+        XCTAssertTrue(created)
         let first = try XCTUnwrap(store.reminders.first)
-        XCTAssertTrue(await store.respond(id: first.id, revision: 1, action: "DONE"))
-        XCTAssertFalse(await store.respond(id: first.id, revision: 1, action: "SKIP"))
+        let didComplete = await store.respond(id: first.id, revision: 1, action: "DONE")
+        let staleSkip = await store.respond(id: first.id, revision: 1, action: "SKIP")
+        XCTAssertTrue(didComplete)
+        XCTAssertFalse(staleSkip)
         let restored = IOSReminderStore(storageURL: url)
         XCTAssertEqual(restored.reminders.first?.outcome, .done)
         XCTAssertEqual(restored.events.map(\.kind), ["CREATED", "DONE"])
@@ -68,9 +75,10 @@ final class IOSReminderStoreTests: XCTestCase {
     func testArchiveRetainsRecordAndAuditEvent() async throws {
         let url = try privateURL()
         let store = IOSReminderStore(storageURL: url)
-        XCTAssertTrue(await store.create(
+        let created = await store.create(
             title: "Water plants", dueAt: .now.addingTimeInterval(3600)
-        ))
+        )
+        XCTAssertTrue(created)
         let first = try XCTUnwrap(store.reminders.first)
         await store.archive(id: first.id)
         let reloaded = IOSReminderStore(storageURL: url)
@@ -87,9 +95,10 @@ final class IOSReminderStoreTests: XCTestCase {
         try corrupted.write(to: url, options: .atomic)
         let store = IOSReminderStore(storageURL: url)
         XCTAssertNotNil(store.lastError)
-        XCTAssertFalse(await store.create(
+        let created = await store.create(
             title: "Must fail", dueAt: .now.addingTimeInterval(3600)
-        ))
+        )
+        XCTAssertFalse(created)
         XCTAssertEqual(try Data(contentsOf: url), corrupted)
     }
 }
