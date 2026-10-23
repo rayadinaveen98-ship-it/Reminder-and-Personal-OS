@@ -89,7 +89,7 @@ class MainActivity : Activity() {
             setPadding(32, 30, 32, 40)
         }
         outer.addView(text("Reminder & Personal OS", 24f))
-        outer.addView(text("Android V0.3c · Encrypted backup test", 13f))
+        outer.addView(text("Android V0.3d · Backup and recovery QA", 13f))
         outer.addView(text("Save real reminders, receive system alerts, and record what happened.", 14f))
         statusLabel = text("")
         outer.addView(statusLabel)
