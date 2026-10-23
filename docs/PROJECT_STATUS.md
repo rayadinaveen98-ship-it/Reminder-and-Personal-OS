@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
 **Working branch:** `feature/shared-recurrence-parity-contract` (stacked on iOS V0.4b)  
-**Stage:** V0.5a portable recurrence contract and twin native parity tests implemented; full KMP runtime integration/persistence still pending
+**Stage:** V0.5a shared recurrence parity verified (20 iOS simulator tests, Android + KMP + SQLite passed); full runtime KMP/database integration still pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -202,3 +202,7 @@ Every active work session starts with reading repo history and open branches. Co
 - Added 10 Kotlin common tests and five matching Android native/JUnit and iOS Swift/XCTest date-key cases to detect differing native calendar results before migrating runtime code.
 - Existing iOS V0.4b simulator [run #39934657157](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39934657157) passed 15/15 tests; new parity branch CI must be verified separately.
 - [Contract details and limitations](SHARED_RECURRENCE_PARITY_V05A.md): platform apps still use their native recurrence engines and separate SQLite/JSON stores. This is a compatibility/test milestone, not completed shared persistence or runtime binding.
+
+## V0.5a CI confirmation — 2026-10-23
+- [Run #39936693872](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39936693872): all 4 jobs passed. 20/20 iOS XCTest passed (5 new parity cases), Android native JUnit and shared Kotlin JVM tests passed; SQLite contract passed.
+- This is a verified **portable recurrence model/compatibility milestone**, not actual Android/iOS runtime coupling, merged databases, stable signed updates or physical device certification.
