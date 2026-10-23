@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/v03d-backup-recovery-qa` (stacked on V0.3c)  
-**Stage:** V0.3d Android debug APK and 3 native SQLite recovery emulator tests PASS in CI; physical device validation/stable signing not complete
+**Working branch:** `feature/v03e-alarm-recovery-hardening` (stacked on V0.3d)  
+**Stage:** V0.3e alarm outbox and routine notification reliability fixes committed; CI/emulator results pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -156,3 +156,12 @@ Every active work session starts with reading repo history and open branches. Co
 - Downloadable `android-reminder-v03d-debug` APK **938,126 bytes**, SHA-256 `ec595e3c69d5f99938161cdc2c037b9bd5004bc99d7528793a4e8f8be57c5b90`. This is **not** an alpha stable signed release.
 - Added secret-controlled release signing machinery; private signing secrets not provided/configured, so no updatable signed release yet. Prior debug-signed versions still use separate app IDs and their data is not automatically migrated.
 - Physical-device system file-picker backup/export, notification timing, reboot and OS/OEM restriction tests remain release blockers. Cross-platform/iOS feature parity incomplete.
+
+## V0.3e scheduling reliability — 2026-10-23
+- Found duplicate SQLite REGISTER job creation after repeated manual repair or recovery; normal resume should also distinguish already-applied from queued work.
+- Fixed outbox reconciliation to check current occurrence/revision/due and existing queued or applied jobs, with explicit force semantics for reboot/manual recovery.
+- Fixed routine Pause/Archive notification dismissal to include all pending occurrences, not just the handful shown in the UI.
+- Added status counts: active future reminders, overdue unresolved reminders, queued scheduling jobs and failed scheduler jobs (not proof of OS delivery).
+- Added seven Android emulator SQLite regression tests for idempotency, stale notification actions, per-occurrence series state, pause/archive suppression and reboot recovery.
+- V0.3e uses separate test package `dev.reminderos.alpha.v03e` to preserve V0.3d and older app data; no automatic cross-package import.
+- [V0.3e release scope and QA](ANDROID_ALPHA_V0_3E.md). Build and physical-device delivery still require verification.
