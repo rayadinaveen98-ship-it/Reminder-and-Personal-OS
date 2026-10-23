@@ -29,7 +29,7 @@ final class IOSPortableEncryptedBackupTests: XCTestCase {
             fixture,passphrase:"Wrong password for test"
         ))
         XCTAssertThrowsError(try IOSPortableBackupCrypto.decrypt(
-            Data("RPOSB1".utf8)+fixture.dropFirst(6),passphrase:passphrase
+            Data("RPOSB1".utf8)+Data(fixture.dropFirst(6)),passphrase:passphrase
         ))
     }
 
@@ -38,7 +38,7 @@ final class IOSPortableEncryptedBackupTests: XCTestCase {
         {"events":[],"portable_format":1,"reminders":[],"rules":[]}
         """.utf8)
         let file=try IOSPortableBackupCrypto.encrypt(original,passphrase:passphrase)
-        XCTAssertFalse(file.contains(Data("portable_format".utf8)))
+        XCTAssertNil(file.range(of:Data("portable_format".utf8)))
         let decrypted=try IOSPortableBackupCrypto.decrypt(file,passphrase:passphrase)
         XCTAssertEqual(original,decrypted)
         XCTAssertTrue(try IOSPortableTransfer.inspectEncrypted(
