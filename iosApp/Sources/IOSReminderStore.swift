@@ -41,13 +41,18 @@ final class IOSReminderStore: ObservableObject {
     private let center = UNUserNotificationCenter.current()
     private let filename = "ios-reminders-alpha-v1.json"
     private let notificationPrefix = "reminderos.ios.alpha."
+    private let storageOverride: URL?
 
     private var fileURL: URL {
+        if let storageOverride { return storageOverride }
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return directory.appendingPathComponent(filename)
     }
 
-    private init() {
+    /// Optional private file location enables isolated, non-destructive XCTest.
+    /// The normal app always uses Application Support.
+    init(storageURL: URL? = nil) {
+        self.storageOverride = storageURL
         do {
             let url = fileURL
             if FileManager.default.fileExists(atPath: url.path) {
