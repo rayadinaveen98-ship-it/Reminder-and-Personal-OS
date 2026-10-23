@@ -90,7 +90,7 @@ class MainActivity : Activity() {
             setPadding(32, 30, 32, 40)
         }
         outer.addView(text("Reminder & Personal OS", 24f))
-        outer.addView(text("Android V0.5c · Migration inspection alpha", 13f))
+        outer.addView(text("Android V0.5d · Portable encrypted backup alpha", 13f))
         outer.addView(text("Save real reminders, receive system alerts, and record what happened.", 14f))
         statusLabel = text("")
         outer.addView(statusLabel)
@@ -114,6 +114,12 @@ class MainActivity : Activity() {
                     .setMessage(error.message ?: "Source data could not be safely validated.")
                     .setPositiveButton("OK",null).show()
             }
+        })
+        outer.addView(button("Export portable backup (Android + iOS)") {
+            askForBackupPassword(true, portable = true)
+        })
+        outer.addView(button("Verify portable backup (no import)") {
+            askForBackupPassword(false, true, portable = true)
         })
         outer.addView(button("Export encrypted backup") { askForBackupPassword(true) })
         outer.addView(button("Verify saved backup (no restore)") { askForBackupPassword(false,true) })
@@ -236,7 +242,9 @@ class MainActivity : Activity() {
         })
     }
 
-    private fun askForBackupPassword(export: Boolean, verifyOnly: Boolean = false) {
+    private fun askForBackupPassword(
+        export: Boolean, verifyOnly: Boolean = false, portable: Boolean = false
+    ) {
         if (!export && !verifyOnly && backupRepository.hasUserRecords()) {
             AlertDialog.Builder(this)
                 .setTitle("Restore blocked to protect existing reminders")
@@ -262,11 +270,14 @@ class MainActivity : Activity() {
         if(confirm != null) inputs.addView(confirm)
         AlertDialog.Builder(this)
             .setTitle(when {
+                export && portable -> "Create cross-platform encrypted backup"
+                verifyOnly && portable -> "Verify cross-platform backup"
                 export -> "Create encrypted backup"
                 verifyOnly -> "Verify backup safely"
                 else -> "Restore encrypted backup"
             })
             .setMessage(when {
+                export && portable -> "This Android/iOS test format uses 12-128 printable English/ASCII characters. Forgotten passwords cannot be recovered. Existing legacy backups still work separately."
                 export -> "Use a unique passphrase of at least 12 characters. If forgotten, the exported backup cannot be recovered."
                 verifyOnly -> "Checks your file and password without importing or altering any reminders."
                 else -> "The correct password is required. Restoring does not copy Android alarm permissions or OS registrations."
@@ -279,6 +290,11 @@ class MainActivity : Activity() {
                     toast("Enter a passphrase of at least 12 characters for export")
                     return@setPositiveButton
                 }
+                if(portable && (chosen.length !in 12..128 ||
+                    chosen.any { it.code !in 32..126 })) {
+                    toast("Portable backup password: 12-128 printable ASCII characters")
+                    return@setPositiveButton
+                }
                 if(export && chosen != confirm?.text?.toString()) {
                     toast("Passphrases do not match")
                     return@setPositiveButton
@@ -288,12 +304,15 @@ class MainActivity : Activity() {
                 val intent=if(export) Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
                     type="application/octet-stream"
-                    putExtra(Intent.EXTRA_TITLE,"reminder-os-backup.rpos")
+                    putExtra(Intent.EXTRA_TITLE,if(portable)
+                        "reminder-os-portable-v2.rpos" else "reminder-os-backup.rpos")
                 } else Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
                     type="*/*"
                 }
                 try { startActivityForResult(intent,when {
+                    export && portable -> REQUEST_EXPORT_PORTABLE
+                    verifyOnly && portable -> REQUEST_VERIFY_PORTABLE
                     export -> REQUEST_EXPORT
                     verifyOnly -> REQUEST_VERIFY
                     else -> REQUEST_IMPORT
@@ -310,7 +329,8 @@ class MainActivity : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
         if(requestCode != REQUEST_EXPORT && requestCode != REQUEST_IMPORT &&
-            requestCode != REQUEST_VERIFY) return
+            requestCode != REQUEST_VERIFY && requestCode != REQUEST_EXPORT_PORTABLE &&
+            requestCode != REQUEST_VERIFY_PORTABLE) return
         val password=pendingBackupPassword
         pendingBackupPassword=null
         if(resultCode != Activity.RESULT_OK || data?.data == null || password == null) {
@@ -319,8 +339,10 @@ class MainActivity : Activity() {
         }
         val uri=data.data!!
         try {
-            if(requestCode == REQUEST_EXPORT) {
-                val sealed=backupRepository.exportEncrypted(password)
+            if(requestCode == REQUEST_EXPORT || requestCode == REQUEST_EXPORT_PORTABLE) {
+                val sealed=if(requestCode == REQUEST_EXPORT_PORTABLE)
+                    PortableEncryptedTransfer(store).exportEncrypted(password)
+                else backupRepository.exportEncrypted(password)
                 try {
                     contentResolver.openOutputStream(uri,"w")?.use { it.write(sealed); it.flush() }
                         ?: throw IllegalStateException("Cannot write the selected document")
@@ -341,8 +363,10 @@ class MainActivity : Activity() {
                     out.toByteArray()
                 } ?: throw IllegalStateException("Cannot read backup file")
                 try {
-                    if(requestCode == REQUEST_VERIFY) {
-                        val result=backupRepository.inspectEncrypted(encrypted,password)
+                    if(requestCode == REQUEST_VERIFY || requestCode == REQUEST_VERIFY_PORTABLE) {
+                        val result=if(requestCode == REQUEST_VERIFY_PORTABLE)
+                            PortableEncryptedTransfer.inspectEncrypted(encrypted,password)
+                        else backupRepository.inspectEncrypted(encrypted,password)
                         AlertDialog.Builder(this)
                             .setTitle("Backup verified")
                             .setMessage(result)
@@ -368,6 +392,8 @@ class MainActivity : Activity() {
         const val REQUEST_EXPORT=7201
         const val REQUEST_IMPORT=7202
         const val REQUEST_VERIFY=7203
+        const val REQUEST_EXPORT_PORTABLE=7204
+        const val REQUEST_VERIFY_PORTABLE=7205
     }
 
     private fun clearEditor() {
