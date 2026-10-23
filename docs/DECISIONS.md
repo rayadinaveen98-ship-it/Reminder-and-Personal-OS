@@ -110,3 +110,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-071 (ACCEPTED PROTOTYPE): iOS SwiftUI calls a Kotlin/Native static `ReminderCore` framework through `RecurrenceBridge` for calendar-date membership; Foundation remains owner of DST/time-zone resolution.
 - D-072 (MIGRATION SAFETY): Android V0.5b has separate package `dev.reminderos.alpha.v05b` and **does not import old data automatically**. Persistent database formats are still independent and must be migrated with backups/rollback.
 - D-073 (EVIDENCE): [Four-job CI #39939787871](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939787871) passed with 20 iOS Simulator tests; [Android emulator #39939788038](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939788038) passed 10 Android SQLite tests. This does not certify physical-device notification delivery.
+
+## V0.5c storage-readiness decisions — 2026-10-23
+- D-074 (CANONICAL PROTOTYPE): Version 1 shared storage snapshot contains series definitions, all reminder occurrences and append-only audit events. OS-specific pending schedules are intentionally excluded.
+- D-075 (SAFETY): Android SQLite and iOS JSON are read-only inputs during compatibility inspections; no import/write until tested backups, atomic migrations and rollback exist.
+- D-076 (NORMALIZATION): Android PENDING and iOS UNKNOWN both map to portable UNKNOWN; explicit Done/Skipped remain distinct. Historical unused weekday-mask bits for nonweekly schedules are normalized without altering legacy source.
+- D-077 (LIMIT): iOS per-record field checks use the native Kotlin framework, but cross-record checks are Swift until a full Kotlin snapshot importer bridges native collections.
