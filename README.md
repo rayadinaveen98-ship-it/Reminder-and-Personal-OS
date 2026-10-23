@@ -46,3 +46,6 @@ A [portable SQLite event + scheduling outbox contract](docs/PERSISTENCE_CONTRACT
 
 ### Android alpha APK (developer test build)
 Android Alpha v0.2 saves multiple one-time reminders on the device and provides Done/Snooze/Skip. [CI build #39819474781](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39819474781) passed; download the `android-reminder-alpha-debug` artifact while retained. [Scope and QA instructions](docs/ANDROID_ALPHA_V0_2.md). This is not a stable release or an iOS feature-parity build.
+
+### V0.3a reminder management test
+[Android V0.3a QA and compatibility notes](docs/ANDROID_ALPHA_V0_3A.md): editing, pause/resume, archive, event history, flexible snooze and manual repair, with additive SQLite migration. The separate app package protects existing v0.2 local data during signing-unstable developer builds; it does **not** migrate data from the parallel v0.2 install.
