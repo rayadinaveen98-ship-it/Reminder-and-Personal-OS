@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Test SQLite schema, recovery and outbox transactions
-        run: python3 -m unittest discover -s tests -p 'test_sqlite_reference.py' -v
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
 
   shared-jvm:
     name: Shared JVM compile and tests
