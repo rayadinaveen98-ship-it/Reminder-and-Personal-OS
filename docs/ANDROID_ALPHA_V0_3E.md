@@ -2,7 +2,7 @@
 
 **Date:** October 23, 2026
 **Package:** `dev.reminderos.alpha.v03e` (separate development install)
-**Stage:** Source implemented. Build and emulator status require GitHub Actions confirmation.
+**Stage:** Android debug APK and 10 Android emulator SQLite tests passed in CI; physical-device alarm timing unverified.
 
 ## Problem found in V0.3d
 
@@ -59,3 +59,10 @@ Prior backup restore emulator tests are retained. These tests validate **databas
 ## Next milestone
 
 After emulator/build validation, move toward an actual feature-parity iOS app and stable signing/upgrade process. The larger Personal OS scope—goals, routines, tracked metrics and explainable insights—remains to be implemented.
+
+## Verified V0.3e CI and APK — 2026-10-23
+- [Android emulator recovery QA #39903891862](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39903891862): **10/10 Android 15 (API 35) instrumentation tests passed** (3 earlier encrypted backup/recovery tests and 7 new scheduling idempotency/recurrence/obsolete-action tests).
+- [Standard CI #39903891795](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39903891795): all 4 jobs passed: Android debug APK/JUnit, portable SQLite contract, shared JVM, iOS Simulator preview.
+- Android artifact `android-reminder-v03e-debug` from source revision `7b7812ac2a6c34a487ae56a2963632ba65999be3`. Extracted APK **940,398 bytes**, SHA-256 `b9df0634de2688534607601595753930fe76db3f6deccf1d3ed258f683751270`. Archive integrity and binary manifest/classes verified.
+- Debug APK package: `dev.reminderos.alpha.v03e`, Android 8.0+ minimum. This intentionally does not update the previous app package or import data automatically.
+- Stable release signing remains **not configured**. Physical-device Doze, exact alarm permission, restart and notification delivery still need testing. Internal SQLite consistency does not prove a person saw or completed a reminder.
