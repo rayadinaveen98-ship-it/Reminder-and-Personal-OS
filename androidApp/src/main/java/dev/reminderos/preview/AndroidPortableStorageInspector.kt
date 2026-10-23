@@ -20,7 +20,7 @@ import dev.reminderos.core.previewPortableMigration
  * Migration writes are NOT performed in this phase.
  */
 internal class AndroidPortableStorageInspector(private val store: ReminderDatabase) {
-    private fun snapshot(): PortableStorageSnapshot {
+    fun snapshotReadOnly(): PortableStorageSnapshot {
         val db = store.readableDatabase
         db.beginTransactionNonExclusive()
         try {
@@ -80,5 +80,5 @@ internal class AndroidPortableStorageInspector(private val store: ReminderDataba
         } finally { db.endTransaction() }
     }
 
-    fun inspect(): PortableMigrationPreview = previewPortableMigration(snapshot())
+    fun inspect(): PortableMigrationPreview = previewPortableMigration(snapshotReadOnly())
 }
