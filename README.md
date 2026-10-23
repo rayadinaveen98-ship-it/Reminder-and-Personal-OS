@@ -91,3 +91,5 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 
 ### V0.5c storage-migration safety gate
 [Canonical portable snapshot and read-only Android/iOS inspectors](docs/PORTABLE_STORAGE_V05C.md) compare both platforms' existing data against a shared KMP schema. These preview tools never migrate or overwrite reminder stores; actual shared database, portable encrypted transfer and rollback are future development steps.
+
+**V0.5c read-only inspection verified:** [all four GitHub CI jobs passed](https://github.com/rayadinave98-ship-it/Reminder-and-Personal-OS/actions/runs/39943474845), with **23 iOS Simulator XCTest**; [13 Android emulator cases passed](https://github.com/rayadinave98-ship-it/Reminder-and-Personal-OS/actions/runs/39943474863). V0.5c Android debug APK SHA-256 `106ea142d6697cc36a2ad54c646d27b856d4ace2b6a300ef576a5ce7a33e4869`. This only previews compatibility; it does not migrate user data or replace the native stores.
