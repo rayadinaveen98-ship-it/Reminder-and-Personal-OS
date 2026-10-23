@@ -98,10 +98,30 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath iosApp/DerivedData \
             CODE_SIGNING_ALLOWED=NO build
+      - name: Run iOS reminder persistence XCTest on Simulator
+        run: |
+          set -euo pipefail
+          SIM_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; devices=json.load(sys.stdin)["devices"]; print(next((d["udid"] for runtime,values in devices.items() if "iOS" in runtime for d in values if d.get("isAvailable",True) and "iPhone" in d["name"]), ""))')"
+          test -n "$SIM_ID" || { echo "No available iPhone simulator found"; exit 1; }
+          xcodebuild -project iosApp/ReminderOSPreview.xcodeproj \
+            -scheme ReminderOSPreview \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIM_ID" \
+            -derivedDataPath iosApp/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            -parallel-testing-enabled NO test
+      - name: Upload iOS simulator XCTest diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-persistence-test-diagnostics
+          path: iosApp/DerivedData/Logs/Test/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload iOS simulator preview
         uses: actions/upload-artifact@v4
         with:
-          name: ios-native-preview-simulator
+          name: ios-reminders-persistent-alpha-simulator
           path: iosApp/DerivedData/Build/Products/Debug-iphonesimulator/ReminderOSPreview.app
           if-no-files-found: error
           retention-days: 7

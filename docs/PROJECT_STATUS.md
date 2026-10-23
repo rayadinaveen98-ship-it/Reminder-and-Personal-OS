@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/v03e-alarm-recovery-hardening` (stacked on V0.3d)  
-**Stage:** V0.3e Android APK and 10 emulator SQLite reliability tests passed; physical-device notifications, stable signing and iOS parity pending
+**Working branch:** `feature/ios-persistent-reminders-alpha` (stacked on Android V0.3e)  
+**Stage:** iOS V0.4a local persistent one-time reminders and notification actions implemented; Xcode simulator CI pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -172,3 +172,11 @@ Every active work session starts with reading repo history and open branches. Co
 - APK artifact `android-reminder-v03e-debug`, source `7b7812ac2a6c34a487ae56a2963632ba65999be3`, **940,398 bytes**, SHA-256 `b9df0634de2688534607601595753930fe76db3f6deccf1d3ed258f683751270`, archive integrity verified.
 - Debug test package `dev.reminderos.alpha.v03e` is separate from older installations. Signed release workflow has no owner secrets and no stable-signing claim.
 - Physical-phone background delivery, reboot/exact-alarm behaviour and file-picker flows still require QA; not a stable release.
+
+## iOS native persistent reminders V0.4a — 2026-10-23
+- Replaced single 60-second iOS preview UI with locally persisted, multi-reminder one-time SwiftUI flow: create reminders, display pending/overdue/Done/Skipped, explicit Done/Skip/Snooze 10m, archive and event history.
+- JSON V1 snapshot written atomically in iOS Application Support with post-first-unlock file protection. Corrupt/unsupported store opens read-only, not destructive reset.
+- Native UNUserNotificationCenter action categories registered at launch; background Done/Snooze/Skip action callbacks pass stable UUID + revision to protect against stale taps.
+- Best-effort pending notification reconciliation on app launch/foreground/actions, with maximum 48 outstanding alerts. Unknown/ignored reminders remain unresolved.
+- Separate iOS alpha bundle ID `dev.reminderos.iosalpha`; prior simulator-only preview remains logically separate.
+- [iOS V0.4a scope and limitations](IOS_PERSISTENT_ALPHA_V0_4A.md). This is NOT full Android parity: no recurrence, cross-platform database bridge, encrypted backups, iPhone signed app or physical-device evidence. Native iOS CI pending.

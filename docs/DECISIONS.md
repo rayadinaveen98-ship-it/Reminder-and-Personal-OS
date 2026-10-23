@@ -88,3 +88,8 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-057 (PROVISIONAL): Queue native REGISTER only once for the same occurrence/revision/time while PENDING/FAILED. Normal resume treats APPLIED as a valid registration; explicit repair and boot can requeue after OS state loss.
 - D-058 (PROVISIONAL): Cancel notifications for all affected pending routine occurrences when pausing/archiving, not only UI-visible occurrences.
 - D-059 (ACCEPTED REPORTING): Internal outbox status and OS alarm callback do not confirm notification visibility or task completion. Keep UNKNOWN user outcomes until explicit action.
+
+## iOS V0.4a — 2026-10-23
+- D-060 (TEMPORARY): Native iOS V0.4a uses a versioned atomically written app-private JSON snapshot while the cross-platform KMP database bridge is unimplemented. Incompatible/corrupt files must not be silently overwritten.
+- D-061 (PROVISIONAL): iOS actionable reminder notifications have Done/Skip/Snooze 10m IDs; persist user action before OS cancellation/registration; stale revision callback is ignored.
+- D-062 (LIMIT): Queue at most 48 iOS pending local notifications and transparently explain the cap. Foreground reconciliation is best effort and not a guarantee of background delivery or production-ready recurrence.
