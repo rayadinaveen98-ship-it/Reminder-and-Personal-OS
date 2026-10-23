@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/v03c-encrypted-backup` (stacked on V0.3b)  
-**Stage:** V0.3c encrypted backup APK passes CI; physical-device import/export reliability remains unverified
+**Working branch:** `feature/v03d-backup-recovery-qa` (stacked on V0.3c)  
+**Stage:** V0.3d Android emulator backup/restore tests and conditional signing workflow added; CI validation pending
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -142,3 +142,10 @@ Every active work session starts with reading repo history and open branches. Co
 - Added in-app encrypted export, integrity-check-only Verify Backup, and transactional empty-app restore; crypto/password tests are JVM-verified, native file picker and restore roundtrip **not device-tested**.
 - Separate package prevents overwriting earlier alpha apps, but cannot import their private data until a compatible export/upgrader exists.
 - Outstanding: first device export→verify→restore QA, durable release signing, scheduling reliability, accurate recurrence on travel and full iOS reminder parity.
+
+## V0.3d backup and signing reliability — 2026-10-23
+- Added Android instrumentation tests using actual Android SQLite for encrypted export → clean restore, preserved records and user actions, no native-handle import, wrong-passphrase rejection and no overwrite.
+- New Android emulator CI workflow runs isolated backup/restore tests on Android 15 API 35; passing evidence must be checked before claiming device validation.
+- Added optional private signing configuration and separate manual trusted-main/environment GitHub Actions workflow. Signing keys are **not stored in the repository** and have not been configured by the user; this does **not** yet establish stable update signing.
+- V0.3d installs as a separate package `dev.reminderos.alpha.v03d` to preserve V0.3c and older app data. V0.3c encrypted backup files may be used for V0.3d clean restore after QA.
+- See [V0.3d QA and signing guidance](ANDROID_ALPHA_V0_3D.md). No physical device backup/file-picker or OS alarm-delivery guarantee yet.
