@@ -1,7 +1,7 @@
 # Android V0.3c — Password-encrypted reminder backups
 
 **Date:** 2026-10-23
-**Status:** Developer alpha. Android CI/device validation is required before using it to store important reminders.
+**Status:** Developer alpha. Android APK and JVM crypto checks passed in CI; export/import on a physical device is NOT yet verified.
 **Package:** `dev.reminderos.alpha.v03c`, intentionally separate from the previous test packages.
 
 ## Why backups are a priority
@@ -55,3 +55,10 @@ Do not uninstall or wipe your only copy of test data just to verify restore. Pre
 
 - Android Storage Access Framework: https://developer.android.com/training/data-storage/shared/documents-files
 - Android cryptographic key generation guidance: https://mas.owasp.org/MASTG/knowledge/android/MASVS-CRYPTO/MASTG-KNOW-0012/
+
+## Verified CI release artifact — October 23, 2026
+- [GitHub Actions run #39899394481](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39899394481) passed all four jobs: Android debug APK and native JVM crypto/calendar tests, shared JVM, portable SQLite contracts and iOS simulator host.
+- CI artifact: `android-reminder-v03c-debug`, source revision `85cc0891e33163784642128b925df428d815ae82` (the latest code changes, including Verify Backup and consistent SQLite snapshot).
+- Extracted APK: **938,098 bytes**, SHA-256 `13d14c131ecaf13b8b141dbf5fcd57210ea2c4d2f7902bca9e8cd9d5a0e48f73`; ZIP integrity, binary AndroidManifest.xml and compiled DEX verified.
+- App package `dev.reminderos.alpha.v03c` installs separately from V0.3b. **No automatic transfer from older alphas.**
+- **No physical-device export/import, incorrect-password UI, background alarm or crash-recovery tests have been performed.** Treat encryption/restore as a test feature until a real roundtrip passes.
