@@ -97,6 +97,7 @@ internal class ReminderAlarmEngine(private val context: Context) {
     }
 
     fun recoverAfterRestart() {
+        database.ensureRecurring()
         database.recoverFuture()
         flush()
     }
@@ -166,7 +167,13 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
         val id = intent.getStringExtra("id") ?: return
         val revision = intent.getIntExtra("revision", -1)
         if (revision < 1) return
-        val record = ReminderDatabase(context).receivedAlarm(id, revision) ?: return
+        val db = ReminderDatabase(context)
+        val record = db.receivedAlarm(id, revision) ?: return
+        // The next scheduled calendar slot is independent of the user's answer.
+        if (record.seriesId != null) {
+            db.ensureRecurring()
+            ReminderAlarmEngine(context).flush()
+        }
         ReminderAlarmEngine.notifyDue(context, record)
     }
     companion object { const val ACTION_FIRE = "dev.reminderos.alpha.REMINDER_FIRE" }
