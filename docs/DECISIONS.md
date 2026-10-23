@@ -104,3 +104,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-067 (CANONICAL): Logical occurrence identity is (series ID, original YYYY-MM-DD local date), independent of mutable fire time, snooze or revision.
 - D-068 (BOUNDARY): Native OS adapters resolve timezone/DST gaps, exact alarm permissions, OS scheduling and notification presentation; no portable calendar code may invent an epoch instant.
 - D-069 (LIMIT): Matching fixture tests do not mean both native apps call KMP logic at runtime. Separate persistence/Swift framework integration must be developed before claiming shared execution.
+
+## V0.5b runtime linkage — 2026-10-23
+- D-070 (PROVISIONAL): In standalone Android developer alpha, compile canonical `commonMain` Kotlin sources using AGP 9 `AndroidSourceSet.kotlin` and call `PortableRecurrenceSpec` at runtime; replace with an actual KMP module binary dependency after Gradle build unification.
+- D-071 (ACCEPTED PROTOTYPE): iOS SwiftUI calls a Kotlin/Native static `ReminderCore` framework through `RecurrenceBridge` for calendar-date membership; Foundation remains owner of DST/time-zone resolution.
+- D-072 (MIGRATION SAFETY): Android V0.5b has separate package `dev.reminderos.alpha.v05b` and **does not import old data automatically**. Persistent database formats are still independent and must be migrated with backups/rollback.
+- D-073 (EVIDENCE): [Four-job CI #39939787871](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939787871) passed with 20 iOS Simulator tests; [Android emulator #39939788038](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939788038) passed 10 Android SQLite tests. This does not certify physical-device notification delivery.
