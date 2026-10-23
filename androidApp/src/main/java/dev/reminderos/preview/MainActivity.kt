@@ -23,7 +23,7 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * Android Alpha 0.2: deliberately plain UI for repeatable data and alarm testing.
+ * Android Alpha V0.3a: deliberately plain UI for reminder-management testing.
  * Custom recurring schedules, cross-platform persistence, goals and analysis
  * remain future work. Do not use this preview as a critical alarm service.
  */
@@ -77,7 +77,7 @@ class MainActivity : Activity() {
             setPadding(32, 30, 32, 40)
         }
         outer.addView(text("Reminder & Personal OS", 24f))
-        outer.addView(text("Android Alpha · Local reminders only", 13f))
+        outer.addView(text("Android V0.3a · Management test build", 13f))
         outer.addView(text("Save real reminders, receive system alerts, and record what happened.", 14f))
         statusLabel = text("")
         outer.addView(statusLabel)
