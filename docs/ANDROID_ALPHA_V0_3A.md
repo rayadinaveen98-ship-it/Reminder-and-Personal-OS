@@ -1,6 +1,6 @@
 # Android V0.3a — Reminder Management Test Build
 
-**Stage:** Source complete for build verification, not a stable release.
+**Stage:** Android debug APK compiled successfully in CI; real-device behaviour unverified (developer alpha).
 **Scope:** Edit, pause/resume, archive, event history, flexible snooze and manual alert repair.
 **Built on:** Android Alpha v0.2's one-time reminders, native AlarmManager and local SQLite.
 
@@ -26,7 +26,7 @@ V0.3a intentionally uses **a separate Android application ID** `dev.reminderos.a
 
 - Python sqlite3 contract tests extract **the exact ALTER TABLE statements from Kotlin** and validate v1 data/action/outbox preservation, new defaults and CHECK constraints. This is not Android emulator migration instrumentation.
 - Existing 25 SQLite/outbox reference tests run alongside the new migration checks in GitHub Actions.
-- Android APK, shared JVM and iOS Simulator CI are requested; build success must be independently confirmed before distributing an APK.
+- **PASS:** [GitHub Actions run #39895650894](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39895650894) completed Android APK, JVM, SQLite/migration and iOS Simulator CI jobs successfully.
 - Device behaviour (Doze, force stop, alarm permissions, boot handling, editing near an alarm firing) is not automatically validated by CI build.
 
 ## Known gaps
@@ -58,3 +58,11 @@ V0.3a intentionally uses **a separate Android application ID** `dev.reminderos.a
 - **Beyond:** Equivalent iOS persistent reminder app and shared KMP persistence, tracking and analytics.
 
 All future releases must explicitly distinguish code committed, CI compiled, and physical-device tested.
+
+## Verified V0.3a artifact — 2026-10-23
+- [GitHub Actions build #39895650894](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39895650894): **all four CI jobs passed**.
+- SQLite database/outbox and migration checks: **29 Python tests passed**.
+- Artifact: `android-reminder-v03a-debug` containing `ReminderAndroidPreview-debug.apk`, from commit `28991b1a701b40715272b2284d2401488d287c6d`.
+- Extracted APK: **909,102 bytes**, SHA-256 `b5f86f7b9ac69597c5dc1d84ae0364dcd0b0b1e74ea333aea1c635c912855b8c`; inspected manifest/dex presence.
+- Android app ID is `dev.reminderos.alpha.v03`, separate from V0.2's `dev.reminderos.alpha`. Installing it must not require uninstalling V0.2.
+- Build/check success does not demonstrate actual reminder notification delivery or native Android schema migration on a physical device. Those remain pending.
