@@ -449,7 +449,7 @@ internal class ReminderDatabase(context: Context) :
     @Synchronized fun routineHistory(id: String): String =
         readableDatabase.rawQuery(
             """SELECT slot_key,status,original_due_at FROM reminders
-               WHERE series_id=? AND original_due_at <=?
+               WHERE series_id=? AND (original_due_at <=? OR status <> 'PENDING')
                ORDER BY original_due_at DESC LIMIT 25""",
             arrayOf(id,System.currentTimeMillis().toString())
         ).use { c ->
