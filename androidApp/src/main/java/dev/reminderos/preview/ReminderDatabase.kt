@@ -327,6 +327,16 @@ internal class ReminderDatabase(context: Context) :
             result
         }
 
+    @Synchronized fun pendingOccurrenceIdsForRoutine(seriesId: String): List<String> =
+        readableDatabase.rawQuery(
+            "SELECT id FROM reminders WHERE series_id=? AND status='PENDING'",
+            arrayOf(seriesId)
+        ).use { c ->
+            val out = mutableListOf<String>()
+            while (c.moveToNext()) out.add(c.getString(0))
+            out
+        }
+
     @Synchronized fun rule(id: String): RecurrenceRule? =
         readableDatabase.rawQuery(
             "SELECT id,title,anchor_ms,mode,days_mask,paused,archived FROM recurrence_rules WHERE id=?",
