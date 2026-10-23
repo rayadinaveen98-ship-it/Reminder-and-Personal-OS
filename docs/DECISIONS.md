@@ -77,3 +77,9 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-050 (PROPOSED): Never overwrite populated reminder databases; restore into an empty app transactionally, then regenerate local OS alarms.
 - D-051 (ACCEPTED ALPHA LIMIT): A separately packaged test build cannot read another package's private app data. No assertion of V0.2/V0.3a/V0.3b import without a compatible export source.
 - D-052 (OPEN): Configure reproducible release signing from private GitHub secrets; never commit private keystore to the public repository.
+
+## V0.3d decisions — 2026-10-23
+- D-053 (PROVISIONAL): Require Android emulator integration tests of the actual SQLite import/export boundary in addition to pure Kotlin and Python tests.
+- D-054 (SECURITY DESIGN): Do not place signing keys or credentials in the repository; signed alpha builds run only manually from trusted main with authorized environment secrets.
+- D-055 (ACCEPTED LIMITATION): Debug-signed test APKs cannot update apps signed with a different certificate; preserve existing user data by separate app IDs until a verified stable signing and migration strategy exists.
+- D-056 (TEST SCOPE): Emulator SQLite tests are not evidence that OS notification delivery or Android file-picker workflows are reliable on a physical phone.

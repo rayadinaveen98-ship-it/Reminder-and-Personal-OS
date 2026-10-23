@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
-**Working branch:** `feature/v03c-encrypted-backup` (stacked on V0.3b)  
-**Stage:** V0.3c encrypted backup APK passes CI; physical-device import/export reliability remains unverified
+**Working branch:** `feature/v03d-backup-recovery-qa` (stacked on V0.3c)  
+**Stage:** V0.3d Android debug APK and 3 native SQLite recovery emulator tests PASS in CI; physical device validation/stable signing not complete
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -142,3 +142,17 @@ Every active work session starts with reading repo history and open branches. Co
 - Added in-app encrypted export, integrity-check-only Verify Backup, and transactional empty-app restore; crypto/password tests are JVM-verified, native file picker and restore roundtrip **not device-tested**.
 - Separate package prevents overwriting earlier alpha apps, but cannot import their private data until a compatible export/upgrader exists.
 - Outstanding: first device export→verify→restore QA, durable release signing, scheduling reliability, accurate recurrence on travel and full iOS reminder parity.
+
+## V0.3d backup and signing reliability — 2026-10-23
+- Added Android instrumentation tests using actual Android SQLite for encrypted export → clean restore, preserved records and user actions, no native-handle import, wrong-passphrase rejection and no overwrite.
+- New Android emulator CI workflow runs isolated backup/restore tests on Android 15 API 35; passing evidence must be checked before claiming device validation.
+- Added optional private signing configuration and separate manual trusted-main/environment GitHub Actions workflow. Signing keys are **not stored in the repository** and have not been configured by the user; this does **not** yet establish stable update signing.
+- V0.3d installs as a separate package `dev.reminderos.alpha.v03d` to preserve V0.3c and older app data. V0.3c encrypted backup files may be used for V0.3d clean restore after QA.
+- See [V0.3d QA and signing guidance](ANDROID_ALPHA_V0_3D.md). No physical device backup/file-picker or OS alarm-delivery guarantee yet.
+
+## V0.3d verified outcomes — 2026-10-23
+- [Emulator QA #39902092344](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39902092344): 3 instrumentation tests passed on Android 15 (native Android SQLite encrypted backup roundtrip, incorrect passphrase protection, no overwrite on populated app).
+- [Standard CI #39902092246](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39902092246): all 4 jobs passed for Android APK/unit tests, shared JVM, portable SQLite, iOS Simulator preview.
+- Downloadable `android-reminder-v03d-debug` APK **938,126 bytes**, SHA-256 `ec595e3c69d5f99938161cdc2c037b9bd5004bc99d7528793a4e8f8be57c5b90`. This is **not** an alpha stable signed release.
+- Added secret-controlled release signing machinery; private signing secrets not provided/configured, so no updatable signed release yet. Prior debug-signed versions still use separate app IDs and their data is not automatically migrated.
+- Physical-device system file-picker backup/export, notification timing, reboot and OS/OEM restriction tests remain release blockers. Cross-platform/iOS feature parity incomplete.
