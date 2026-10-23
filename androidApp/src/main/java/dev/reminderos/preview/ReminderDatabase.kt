@@ -14,8 +14,15 @@ internal data class ReminderRecord(
     val status: String,
     val lastFiredRevision: Int,
     val paused: Boolean,
-    val archived: Boolean
+    val archived: Boolean,
+    val seriesId: String? = null,
+    val slotKey: String? = null
 )
+internal data class RecurrenceRule(
+    val id: String, val title: String, val anchorMs: Long,
+    val mode: String, val daysMask: Int, val paused: Boolean, val archived: Boolean
+)
+
 internal data class ScheduleJob(
     val id: String,
     val reminderId: String,
@@ -32,7 +39,7 @@ internal data class ScheduleJob(
  * This Android-local implementation is NOT the shared KMP database adapter.
  */
 internal class ReminderDatabase(context: Context) :
-    SQLiteOpenHelper(context, "reminders_alpha.db", null, 2) {
+    SQLiteOpenHelper(context, "reminders_alpha.db", null, 3) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("PRAGMA foreign_keys=ON")
         db.execSQL("""CREATE TABLE reminders(
@@ -67,13 +74,34 @@ internal class ReminderDatabase(context: Context) :
         )""")
         db.execSQL("CREATE INDEX schedule_jobs_state_idx ON schedule_jobs(state, created_at)")
         db.execSQL("CREATE INDEX reminders_due_idx ON reminders(status,due_at)")
+        upgradeRecurrenceTables(db)
     }
     override fun onConfigure(db: SQLiteDatabase) { db.setForeignKeyConstraintsEnabled(true) }
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        require(oldVersion == 1 && newVersion == 2) { "Unsupported migration $oldVersion -> $newVersion" }
-        // Additive migration: every existing v0.2 reminder and action stays intact.
-        db.execSQL("ALTER TABLE reminders ADD COLUMN paused INTEGER NOT NULL DEFAULT 0 CHECK(paused IN (0,1))")
-        db.execSQL("ALTER TABLE reminders ADD COLUMN archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1))")
+        require(oldVersion in 1..2 && newVersion == 3) { "Unsupported migration $oldVersion -> $newVersion" }
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE reminders ADD COLUMN paused INTEGER NOT NULL DEFAULT 0 CHECK(paused IN (0,1))")
+            db.execSQL("ALTER TABLE reminders ADD COLUMN archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1))")
+        }
+        upgradeRecurrenceTables(db)
+    }
+
+    private fun upgradeRecurrenceTables(db: SQLiteDatabase) {
+        db.execSQL("""CREATE TABLE IF NOT EXISTS recurrence_rules(
+            id TEXT PRIMARY KEY NOT NULL,
+            title TEXT NOT NULL,
+            anchor_ms INTEGER NOT NULL,
+            mode TEXT NOT NULL CHECK(mode IN ('DAILY','WEEKLY','MONTHLY')),
+            days_mask INTEGER NOT NULL DEFAULT 0,
+            paused INTEGER NOT NULL DEFAULT 0 CHECK(paused IN (0,1)),
+            archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1)),
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+        )""")
+        db.execSQL("ALTER TABLE reminders ADD COLUMN series_id TEXT REFERENCES recurrence_rules(id)")
+        db.execSQL("ALTER TABLE reminders ADD COLUMN slot_key TEXT")
+        db.execSQL("CREATE UNIQUE INDEX recurring_slot_unique ON reminders(series_id,slot_key)")
+        db.execSQL("CREATE INDEX recurring_series_due ON reminders(series_id,due_at)")
     }
 
     private inline fun <T> transaction(block: (SQLiteDatabase) -> T): T {
@@ -90,23 +118,36 @@ internal class ReminderDatabase(context: Context) :
         id = c.getString(0), title = c.getString(1), dueAt = c.getLong(2),
         originalDueAt = c.getLong(3), revision = c.getInt(4),
         status = c.getString(5), lastFiredRevision = c.getInt(6),
-        paused = c.getInt(7) != 0, archived = c.getInt(8) != 0
+        paused = c.getInt(7) != 0, archived = c.getInt(8) != 0,
+        seriesId = if (c.isNull(9)) null else c.getString(9),
+        slotKey = if (c.isNull(10)) null else c.getString(10)
     )
     private fun byId(db: SQLiteDatabase, id: String): ReminderRecord? =
         db.rawQuery(
-            "SELECT id,title,due_at,original_due_at,revision,status,last_fired_revision,paused,archived FROM reminders WHERE id=?",
+            "SELECT id,title,due_at,original_due_at,revision,status,last_fired_revision,paused,archived,series_id,slot_key FROM reminders WHERE id=?",
             arrayOf(id)
         ).use { c -> if (c.moveToFirst()) mapReminder(c) else null }
 
     @Synchronized fun all(): List<ReminderRecord> =
         readableDatabase.rawQuery(
-            "SELECT id,title,due_at,original_due_at,revision,status,last_fired_revision,paused,archived FROM reminders " +
+            "SELECT id,title,due_at,original_due_at,revision,status,last_fired_revision,paused,archived,series_id,slot_key FROM reminders " +
                 "WHERE archived=0 ORDER BY CASE status WHEN 'PENDING' THEN 0 ELSE 1 END, due_at ASC",
             null
         ).use { c ->
             val result = mutableListOf<ReminderRecord>()
             while (c.moveToNext()) result.add(mapReminder(c))
-            result
+            // Keep one-time history visible. For each repeating routine show
+            // its nearest two upcoming occurrences and one unresolved overdue.
+            val singles = result.filter { it.seriesId == null }
+            val series = result.filter { it.seriesId != null }.groupBy { it.seriesId!! }
+            val now = System.currentTimeMillis()
+            singles + series.values.flatMap { items ->
+                val upcoming = items.filter { it.status == "PENDING" && it.dueAt >= now }
+                    .sortedBy { it.dueAt }.take(2)
+                val overdue = items.filter { it.status == "PENDING" && it.dueAt < now }
+                    .maxByOrNull { it.dueAt }
+                (listOfNotNull(overdue) + upcoming).distinctBy { it.id }
+            }.sortedBy { it.dueAt }
         }
 
     @Synchronized fun get(id: String): ReminderRecord? = byId(readableDatabase, id)
@@ -246,6 +287,176 @@ internal class ReminderDatabase(context: Context) :
         }
     }
 
+
+
+    @Synchronized fun rules(): List<RecurrenceRule> =
+        readableDatabase.rawQuery(
+            "SELECT id,title,anchor_ms,mode,days_mask,paused,archived FROM recurrence_rules WHERE archived=0 ORDER BY created_at",
+            null
+        ).use { c ->
+            val result = mutableListOf<RecurrenceRule>()
+            while(c.moveToNext()) result.add(
+                RecurrenceRule(c.getString(0),c.getString(1),c.getLong(2),c.getString(3),
+                    c.getInt(4),c.getInt(5)!=0,c.getInt(6)!=0)
+            )
+            result
+        }
+
+    @Synchronized fun rule(id: String): RecurrenceRule? =
+        readableDatabase.rawQuery(
+            "SELECT id,title,anchor_ms,mode,days_mask,paused,archived FROM recurrence_rules WHERE id=?",
+            arrayOf(id)
+        ).use { c ->
+            if(!c.moveToFirst()) null else RecurrenceRule(
+                c.getString(0),c.getString(1),c.getLong(2),c.getString(3),
+                c.getInt(4),c.getInt(5)!=0,c.getInt(6)!=0
+            )
+        }
+
+    @Synchronized fun addRecurring(title: String, anchorMs: Long, mode: String, daysMask: Int): String {
+        require(title.isNotBlank() && anchorMs > System.currentTimeMillis() + 1000)
+        require(mode in setOf("DAILY","WEEKLY","MONTHLY"))
+        require(mode!="WEEKLY" || daysMask in 1..127)
+        val id = UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+        transaction { db ->
+            db.execSQL(
+                """INSERT INTO recurrence_rules(id,title,anchor_ms,mode,days_mask,created_at,updated_at)
+                   VALUES(?,?,?,?,?,?,?)""",
+                arrayOf(id,title.trim(),anchorMs,mode,daysMask,now,now)
+            )
+            materialize(db, id, title.trim(), anchorMs, mode, daysMask, now)
+        }
+        return id
+    }
+
+    /**
+     * Materialize up to 7 future distinct calendar slots. Missed slots stay UNKNOWN
+     * and do not prevent later slots being generated. Cap catch-up per transaction
+     * to avoid unbounded work after a long time away from the app.
+     */
+    private fun materialize(db: SQLiteDatabase, id: String, title: String,
+                            anchor: Long, mode: String, mask: Int, now: Long) {
+        val last = db.rawQuery("SELECT MAX(original_due_at) FROM reminders WHERE series_id=?",
+            arrayOf(id)).use { c -> if(c.moveToFirst() && !c.isNull(0)) c.getLong(0) else anchor-1L }
+        var after = last
+        var future = db.rawQuery(
+            "SELECT COUNT(*) FROM reminders WHERE series_id=? AND original_due_at>?",
+            arrayOf(id,now.toString())
+        ).use { c -> c.moveToFirst(); c.getInt(0) }
+        var generated=0
+        while (future < 7 && generated < 90) {
+            val due = RecurrenceSchedule.next(anchor,after,mode,mask)
+            val slot = RecurrenceSchedule.slotKey(due)
+            val occurrence = UUID.randomUUID().toString()
+            db.execSQL(
+                """INSERT OR IGNORE INTO reminders
+                  (id,title,due_at,original_due_at,revision,status,updated_at,series_id,slot_key)
+                  VALUES(?,?,?,?,1,'PENDING',?,?,?)""",
+                arrayOf(occurrence,title,due,due,now,id,slot)
+            )
+            if (due>now) {
+                val present = db.rawQuery("SELECT id FROM reminders WHERE series_id=? AND slot_key=?",
+                    arrayOf(id,slot)).use { c -> c.moveToFirst() }
+                if(present) {
+                    // Only newly inserted slots get registration jobs.
+                    val inserted = db.rawQuery("SELECT 1 FROM reminders WHERE id=?",
+                        arrayOf(occurrence)).use { c -> c.moveToFirst() }
+                    if(inserted) {
+                        event(db,occurrence,"CREATED",1,now)
+                        newJob(db,occurrence,"REGISTER",1,due,now)
+                    }
+                }
+                future++
+            } else {
+                val inserted = db.rawQuery("SELECT 1 FROM reminders WHERE id=?",
+                    arrayOf(occurrence)).use { c -> c.moveToFirst() }
+                if(inserted) event(db,occurrence,"MISSED_SLOT_UNKNOWN",1,now)
+            }
+            after=due
+            generated++
+        }
+    }
+
+    @Synchronized fun ensureRecurring(): Int {
+        val now=System.currentTimeMillis()
+        return transaction { db ->
+            val list = db.rawQuery(
+                "SELECT id,title,anchor_ms,mode,days_mask FROM recurrence_rules WHERE paused=0 AND archived=0",
+                null
+            ).use { c ->
+                val rows=mutableListOf<RecurrenceRule>()
+                while(c.moveToNext()) rows.add(
+                    RecurrenceRule(c.getString(0),c.getString(1),c.getLong(2),
+                        c.getString(3),c.getInt(4),false,false))
+                rows
+            }
+            for (rule in list) materialize(db,rule.id,rule.title,rule.anchorMs,rule.mode,rule.daysMask,now)
+            list.size
+        }
+    }
+
+    @Synchronized fun setRoutinePaused(id: String, paused: Boolean): Boolean =
+        transaction { db ->
+            val row=rule(id) ?: return@transaction false
+            if(row.paused==paused || row.archived) return@transaction false
+            val now=System.currentTimeMillis()
+            db.execSQL("UPDATE recurrence_rules SET paused=?,updated_at=? WHERE id=?",
+                arrayOf(if(paused) 1 else 0,now,id))
+            val futures=db.rawQuery(
+                "SELECT id,revision,due_at FROM reminders WHERE series_id=? AND status='PENDING' AND archived=0",
+                arrayOf(id)
+            ).use { c ->
+                val rows=mutableListOf<Triple<String,Int,Long>>()
+                while(c.moveToNext()) rows.add(Triple(c.getString(0),c.getInt(1),c.getLong(2)))
+                rows
+            }
+            for ((rid,rev,due) in futures) {
+                val nextRev=rev+1
+                db.execSQL("UPDATE reminders SET paused=?,revision=?,updated_at=? WHERE id=?",
+                    arrayOf(if(paused) 1 else 0,nextRev,now,rid))
+                retireRegistrations(db,rid)
+                newJob(db,rid,"CANCEL",rev,null,now)
+                if(!paused && due>now) newJob(db,rid,"REGISTER",nextRev,due,now)
+            }
+            true
+        }
+
+    @Synchronized fun archiveRoutine(id: String): Boolean =
+        transaction { db ->
+            val row=rule(id) ?: return@transaction false
+            if(row.archived) return@transaction false
+            val now=System.currentTimeMillis()
+            db.execSQL("UPDATE recurrence_rules SET archived=1,updated_at=? WHERE id=?",
+                arrayOf(now,id))
+            val records=db.rawQuery(
+                "SELECT id,revision FROM reminders WHERE series_id=? AND archived=0",
+                arrayOf(id)
+            ).use { c ->
+                val rows=mutableListOf<Pair<String,Int>>()
+                while(c.moveToNext()) rows.add(c.getString(0) to c.getInt(1))
+                rows
+            }
+            for ((rid,rev) in records) {
+                db.execSQL("UPDATE reminders SET archived=1,revision=?,updated_at=? WHERE id=?",
+                    arrayOf(rev+1,now,rid))
+                retireRegistrations(db,rid)
+                newJob(db,rid,"CANCEL",rev,null,now)
+            }
+            true
+        }
+
+    @Synchronized fun routineHistory(id: String): String =
+        readableDatabase.rawQuery(
+            """SELECT slot_key,status,original_due_at FROM reminders
+               WHERE series_id=? AND (original_due_at <=? OR status <> 'PENDING')
+               ORDER BY original_due_at DESC LIMIT 25""",
+            arrayOf(id,System.currentTimeMillis().toString())
+        ).use { c ->
+            val lines=mutableListOf<String>()
+            while(c.moveToNext()) lines.add(c.getString(0)+" · "+c.getString(1))
+            if(lines.isEmpty()) "No due occurrences yet" else lines.joinToString("\n")
+        }
 
     /** Rev guards prohibit stale UI edits and stale notification actions. */
     @Synchronized fun edit(id: String, expectedRevision: Int, title: String, due: Long,

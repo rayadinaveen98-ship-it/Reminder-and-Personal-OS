@@ -15,6 +15,8 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -23,7 +25,7 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * Android Alpha V0.3a: deliberately plain UI for reminder-management testing.
+ * Android Alpha V0.3b: deliberately plain UI for recurrence testing.
  * Custom recurring schedules, cross-platform persistence, goals and analysis
  * remain future work. Do not use this preview as a critical alarm service.
  */
@@ -36,6 +38,9 @@ class MainActivity : Activity() {
     private lateinit var countsLabel: TextView
     private lateinit var listContainer: LinearLayout
     private var selectedDue = System.currentTimeMillis() + 60 * 60_000L
+    private lateinit var repeatSpinner: Spinner
+    private var weeklyDaysMask = 31 // Monday to Friday by default
+
     private var editingId: String? = null
     private var editingRevision: Int? = null
 
@@ -48,6 +53,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        store.ensureRecurring()
         engine.flush()
         if (::listContainer.isInitialized) render()
     }
@@ -77,7 +83,7 @@ class MainActivity : Activity() {
             setPadding(32, 30, 32, 40)
         }
         outer.addView(text("Reminder & Personal OS", 24f))
-        outer.addView(text("Android V0.3a · Management test build", 13f))
+        outer.addView(text("Android V0.3b · Recurring reminder test", 13f))
         outer.addView(text("Save real reminders, receive system alerts, and record what happened.", 14f))
         statusLabel = text("")
         outer.addView(statusLabel)
@@ -114,6 +120,28 @@ class MainActivity : Activity() {
         dueLabel = text("")
         outer.addView(dueLabel)
         outer.addView(button("Choose date and time") { pickDue() })
+        outer.addView(text("Repeat", 15f))
+        repeatSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                arrayOf("Once", "Daily", "Every week · choose days", "Monthly")
+            )
+        }
+        outer.addView(repeatSpinner)
+        outer.addView(button("Choose weekly days (when repeating weekly)") {
+            val days = arrayOf("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+            val chosen = BooleanArray(7) { i -> weeklyDaysMask and (1 shl i) != 0 }
+            AlertDialog.Builder(this)
+                .setTitle("Repeat on")
+                .setMultiChoiceItems(days, chosen) { _, which, checked -> chosen[which] = checked }
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Save") { _, _ ->
+                    val mask = chosen.indices.filter { chosen[it] }.fold(0) { acc, i -> acc or (1 shl i) }
+                    if(mask == 0) toast("Select at least one weekday")
+                    else { weeklyDaysMask = mask; toast("Selected: " + RecurrenceSchedule.description("WEEKLY", mask)) }
+                }.show()
+        })
         outer.addView(button("Save reminder / Save changes") {
             val title = titleInput.text.toString().trim()
             when {
@@ -125,8 +153,19 @@ class MainActivity : Activity() {
                         val edit = editingId
                         val rev = editingRevision
                         if (edit == null || rev == null) {
-                            store.add(title, selectedDue)
-                            toast("Reminder saved")
+                            val mode = when (repeatSpinner.selectedItemPosition) {
+                                1 -> "DAILY"
+                                2 -> "WEEKLY"
+                                3 -> "MONTHLY"
+                                else -> "ONCE"
+                            }
+                            if (mode == "ONCE") {
+                                store.add(title, selectedDue)
+                                toast("Reminder saved")
+                            } else {
+                                store.addRecurring(title, selectedDue, mode, weeklyDaysMask)
+                                toast("Repeating reminder saved")
+                            }
                         } else {
                             if (!store.edit(edit, rev, title, selectedDue)) {
                                 toast("Could not edit: reminder was changed or resolved")
@@ -136,6 +175,7 @@ class MainActivity : Activity() {
                             ReminderAlarmEngine.dismiss(this, edit)
                             toast("Reminder updated")
                         }
+                        store.ensureRecurring()
                         engine.flush()
                         clearEditor()
                         render()
@@ -156,8 +196,8 @@ class MainActivity : Activity() {
         outer.addView(listContainer)
         addSpace(outer, 15)
         outer.addView(text(
-            "V0.3a management test build: one-time reminders, edits, pause and archive. " +
-                "Notifications may be delayed. Unanswered reminders stay unresolved.", 13f))
+            "V0.3b test build. Every repeat has its own outcome. Unanswered slots stay unresolved " +
+                "while upcoming slots continue. Notification timing depends on Android settings.", 13f))
         setContentView(ScrollView(this).apply {
             isFillViewport = true
             addView(outer)
@@ -169,12 +209,14 @@ class MainActivity : Activity() {
         editingRevision = null
         titleInput.text.clear()
         selectedDue = System.currentTimeMillis() + 60 * 60_000L
+        if (::repeatSpinner.isInitialized) repeatSpinner.setSelection(0)
     }
 
     private fun editItem(item: ReminderRecord) {
         editingId = item.id
         editingRevision = item.revision
         titleInput.setText(item.title)
+        repeatSpinner.setSelection(0)
         selectedDue = if (item.dueAt > System.currentTimeMillis() + 1000L)
             item.dueAt else System.currentTimeMillis() + 60 * 60_000L
         render()
@@ -258,6 +300,58 @@ class MainActivity : Activity() {
         val (pending, done, skipped) = store.counts()
         countsLabel.text = "Pending " + pending + "  ·  Done " + done + "  ·  Skipped " + skipped
         listContainer.removeAllViews()
+        val routines = store.rules()
+        if (routines.isNotEmpty()) {
+            listContainer.addView(text("Repeating schedules", 19f))
+            for (rule in routines) {
+                val panel = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(15, 12, 15, 12)
+                    setBackgroundColor(0xffe6f2f3.toInt())
+                }
+                panel.addView(text(rule.title,18f))
+                panel.addView(text(
+                    RecurrenceSchedule.description(rule.mode,rule.daysMask) +
+                        if (rule.paused) " · Paused" else " · Active",13f))
+                val buttons = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                fun option(label: String, click: () -> Unit) {
+                    buttons.addView(button(label,click),
+                        LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT,1f))
+                }
+                option(if(rule.paused) "Resume" else "Pause") {
+                    if(store.setRoutinePaused(rule.id,!rule.paused)) {
+                        if(!rule.paused) {
+                            for (occ in store.all().filter { it.seriesId == rule.id }) {
+                                ReminderAlarmEngine.dismiss(this,occ.id)
+                            }
+                        }
+                        store.ensureRecurring()
+                        engine.flush()
+                        render()
+                    } else toast("Routine was changed. Reopen this screen.")
+                }
+                option("History") {
+                    AlertDialog.Builder(this).setTitle(rule.title+" · History")
+                        .setMessage(store.routineHistory(rule.id))
+                        .setPositiveButton("Close",null).show()
+                }
+                option("Archive") {
+                    AlertDialog.Builder(this).setTitle("Archive repeating schedule?")
+                        .setMessage("Stops all future alerts and retains occurrence history.")
+                        .setNegativeButton("Cancel",null)
+                        .setPositiveButton("Archive") { _, _ ->
+                            if(store.archiveRoutine(rule.id)) {
+                                engine.flush()
+                                render()
+                            }
+                        }.show()
+                }
+                panel.addView(buttons)
+                listContainer.addView(panel)
+                addSpace(listContainer,8)
+            }
+            listContainer.addView(text("Upcoming reminders",19f))
+        }
         val reminders = store.all()
         if (reminders.isEmpty()) {
             listContainer.addView(text("No reminders saved yet. Create your first one above."))
@@ -271,6 +365,10 @@ class MainActivity : Activity() {
                 setBackgroundColor(0xffeeeeee.toInt())
             }
             card.addView(text(item.title, 18f))
+            if(item.seriesId != null) {
+                card.addView(text("Repeat · " + (item.slotKey ?: "") +
+                    " · one independent occurrence",12f))
+            }
             val humanState = when {
                 item.paused -> "Paused"
                 item.status == "PENDING" && item.dueAt < now -> "Overdue · not confirmed"
@@ -294,16 +392,18 @@ class MainActivity : Activity() {
                     tools.addView(button(label, click),
                         LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                 }
-                tool("Edit") { editItem(item) }
-                tool(if (item.paused) "Resume" else "Pause") {
-                    if (store.setPaused(item.id, item.revision, !item.paused)) {
-                        ReminderAlarmEngine.dismiss(this, item.id)
-                        engine.flush()
-                        render()
-                    } else toast("Cannot resume an overdue reminder; edit its due time first")
+                if (item.seriesId == null) {
+                    tool("Edit") { editItem(item) }
+                    tool(if (item.paused) "Resume" else "Pause") {
+                        if (store.setPaused(item.id, item.revision, !item.paused)) {
+                            ReminderAlarmEngine.dismiss(this, item.id)
+                            engine.flush()
+                            render()
+                        } else toast("Cannot resume an overdue reminder; edit its due time first")
+                    }
+                    tool("Archive") { archiveItem(item) }
+                    card.addView(tools)
                 }
-                tool("Archive") { archiveItem(item) }
-                card.addView(tools)
             }
             card.addView(button("History") { showHistory(item) })
             listContainer.addView(card, LinearLayout.LayoutParams(
