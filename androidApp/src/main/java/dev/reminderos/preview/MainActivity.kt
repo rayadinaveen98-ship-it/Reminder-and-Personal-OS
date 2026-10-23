@@ -102,11 +102,11 @@ class MainActivity : Activity() {
                     .setTitle("Read-only data migration check")
                     .setMessage(
                         "Recurring rules: " + report.ruleCount +
-                        "\\nReminder occurrences: " + report.reminderCount +
-                        "\\nUnanswered occurrences: " + report.unresolvedCount +
-                        "\\nArchived occurrences: " + report.archivedReminderCount +
-                        "\\nAudit events: " + report.eventCount +
-                        "\\n\\nYour stored data was not changed or exported."
+                        "\nReminder occurrences: " + report.reminderCount +
+                        "\nUnanswered occurrences: " + report.unresolvedCount +
+                        "\nArchived occurrences: " + report.archivedReminderCount +
+                        "\nAudit events: " + report.eventCount +
+                        "\n\nYour stored data was not changed or exported."
                     ).setPositiveButton("OK",null).show()
             } catch (error: Exception) {
                 AlertDialog.Builder(this)
