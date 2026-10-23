@@ -1,4 +1,5 @@
 import Foundation
+import ReminderCore
 import UserNotifications
 import Combine
 
@@ -404,6 +405,86 @@ final class IOSReminderStore: ObservableObject {
             if $0.outcome != .unknown && $1.outcome == .unknown { return false }
             return $0.dueAt < $1.dueAt
         }
+    }
+
+
+    /// Local-data migration readiness assessment. Never writes to the JSON
+    /// store, changes reminders, schedules notifications or exports PII.
+    /// Invokes the same KMP field contract as Android; cross-row references
+    /// and uniqueness are verified against the complete in-memory snapshot.
+    func inspectMigrationReadiness() throws -> String {
+        guard !readOnlyBecauseLoadFailed else {
+            throw NSError(domain: "ReminderOS", code: 31,
+                          userInfo: [NSLocalizedDescriptionKey: "Existing saved data is unreadable. It was not changed."])
+        }
+        let bridge = StorageMigrationBridge()
+        let ruleIDs = Set(recurrenceRules.map(\.id))
+        guard ruleIDs.count == recurrenceRules.count else {
+            throw NSError(domain: "ReminderOS", code: 32,
+                          userInfo: [NSLocalizedDescriptionKey: "Duplicate recurring schedule IDs"])
+        }
+        for rule in recurrenceRules {
+            // Old iOS alpha stored weekdayMask=31 for non-weekly schedules.
+            // Normalize in memory only, preserving original JSON untouched.
+            let mask = rule.pattern == .weekly ? rule.weekdayMask : 0
+            guard bridge.validateRuleFields(
+                id: rule.id.uuidString,
+                title: rule.title,
+                anchorEpochMillis: Int64(rule.anchorAt.timeIntervalSince1970 * 1000),
+                cadence: rule.pattern.rawValue,
+                weekdayMask: Int32(mask)
+            ) else {
+                throw NSError(domain: "ReminderOS", code: 33,
+                              userInfo: [NSLocalizedDescriptionKey: "Invalid recurring schedule"])
+            }
+        }
+        let reminderIDs = Set(reminders.map(\.id))
+        guard reminderIDs.count == reminders.count else {
+            throw NSError(domain: "ReminderOS", code: 34,
+                          userInfo: [NSLocalizedDescriptionKey: "Duplicate reminder IDs"])
+        }
+        var logicalSlots = Set<String>()
+        for item in reminders {
+            guard bridge.validateReminderFields(
+                id: item.id.uuidString,
+                title: item.title,
+                dueEpochMillis: Int64(item.dueAt.timeIntervalSince1970 * 1000),
+                originalDueEpochMillis: Int64(item.originalDueAt.timeIntervalSince1970 * 1000),
+                revision: Int32(item.revision),
+                outcome: item.outcome.rawValue,
+                seriesId: item.seriesID?.uuidString,
+                slotKey: item.slotKey
+            ) else {
+                throw NSError(domain: "ReminderOS", code: 35,
+                              userInfo: [NSLocalizedDescriptionKey: "Invalid reminder occurrence"])
+            }
+            if let series = item.seriesID {
+                guard ruleIDs.contains(series), let date = item.slotKey else {
+                    throw NSError(domain: "ReminderOS", code: 36,
+                                  userInfo: [NSLocalizedDescriptionKey: "Reminder has a missing recurring schedule"])
+                }
+                guard logicalSlots.insert(series.uuidString + "/" + date).inserted else {
+                    throw NSError(domain: "ReminderOS", code: 37,
+                                  userInfo: [NSLocalizedDescriptionKey: "Duplicate recurring calendar date"])
+                }
+            }
+        }
+        let eventIDs = Set(events.map(\.id))
+        guard eventIDs.count == events.count,
+              events.allSatisfy({ reminderIDs.contains($0.reminderID) &&
+                  !$0.kind.isEmpty && $0.kind.count <= 64 &&
+                  $0.revision >= 1 && $0.recordedAt.timeIntervalSince1970 >= 0 }) else {
+            throw NSError(domain: "ReminderOS", code: 38,
+                          userInfo: [NSLocalizedDescriptionKey: "Action history contains invalid references"])
+        }
+        let unresolved = reminders.filter { $0.outcome == .unknown }.count
+        let archived = reminders.filter(\.archived).count
+        return "Recurring schedules: \(recurrenceRules.count)\n" +
+            "Reminder occurrences: \(reminders.count)\n" +
+            "Unanswered occurrences: \(unresolved)\n" +
+            "Archived occurrences: \(archived)\n" +
+            "Audit events: \(events.count)\n\n" +
+            "No reminders were modified, imported or exported."
     }
 
     func history(for id: UUID) -> [IOSReminderEvent] {

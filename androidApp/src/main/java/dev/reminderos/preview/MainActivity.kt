@@ -90,11 +90,31 @@ class MainActivity : Activity() {
             setPadding(32, 30, 32, 40)
         }
         outer.addView(text("Reminder & Personal OS", 24f))
-        outer.addView(text("Android V0.3e · Scheduling reliability QA", 13f))
+        outer.addView(text("Android V0.5c · Migration inspection alpha", 13f))
         outer.addView(text("Save real reminders, receive system alerts, and record what happened.", 14f))
         statusLabel = text("")
         outer.addView(statusLabel)
         outer.addView(text("Private backup & restore",19f))
+        outer.addView(button("Inspect data migration readiness") {
+            try {
+                val report = AndroidPortableStorageInspector(store).inspect()
+                AlertDialog.Builder(this)
+                    .setTitle("Read-only data migration check")
+                    .setMessage(
+                        "Recurring rules: " + report.ruleCount +
+                        "\nReminder occurrences: " + report.reminderCount +
+                        "\nUnanswered occurrences: " + report.unresolvedCount +
+                        "\nArchived occurrences: " + report.archivedReminderCount +
+                        "\nAudit events: " + report.eventCount +
+                        "\n\nYour stored data was not changed or exported."
+                    ).setPositiveButton("OK",null).show()
+            } catch (error: Exception) {
+                AlertDialog.Builder(this)
+                    .setTitle("Migration check failed")
+                    .setMessage(error.message ?: "Source data could not be safely validated.")
+                    .setPositiveButton("OK",null).show()
+            }
+        })
         outer.addView(button("Export encrypted backup") { askForBackupPassword(true) })
         outer.addView(button("Verify saved backup (no restore)") { askForBackupPassword(false,true) })
         outer.addView(button("Restore encrypted backup (empty app only)") { askForBackupPassword(false) })

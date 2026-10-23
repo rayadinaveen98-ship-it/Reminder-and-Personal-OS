@@ -21,11 +21,11 @@ android {
     defaultConfig {
         // Separate V0.5b test package protects prior alpha data. Future signed alpha builds
         // must KEEP this package ID, signing key and increasing versionCode.
-        applicationId = "dev.reminderos.alpha.v05b"
+        applicationId = "dev.reminderos.alpha.v05c"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.5.0b-alpha"
+        versionCode = 9
+        versionName = "0.5.0c-alpha"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     if (signingConfigured) {
