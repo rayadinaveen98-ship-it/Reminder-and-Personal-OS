@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-22  
 **Repository:** `rayadinaveen98-ship-it/Reminder-and-Personal-OS`  
 **Working branch:** `feature/v03c-encrypted-backup` (stacked on V0.3b)  
-**Stage:** V0.3c encrypted backup export/import implemented in Android source; CI/physical-device restore validation pending
+**Stage:** V0.3c encrypted backup APK passes CI; physical-device import/export reliability remains unverified
 
 ## Completed — documentation only
 - Confirmed project vision, Android + iOS scope and offline-first design principles.
@@ -135,3 +135,10 @@ Every active work session starts with reading repo history and open branches. Co
 - Added 10 native JVM/JUnit crypto checks for successful roundtrip, wrong passphrase, tampering, truncated and oversized payloads.
 - Separate alpha package `dev.reminderos.alpha.v03c` protects older package installations. **Earlier V0.2/V0.3a/V0.3b records cannot automatically transfer into V0.3c**; older apps have no backup export.
 - [V0.3c scope and limitations](ANDROID_ALPHA_V0_3C.md). CI build and native device roundtrip not yet verified.
+
+## Verified V0.3c build — 2026-10-23
+- [GitHub Actions #39899394481](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39899394481) passed all four jobs including native Android crypto/calendar tests, SQLite contracts and iOS simulator regression compilation.
+- Android debug APK `android-reminder-v03c-debug`, source `85cc0891e33163784642128b925df428d815ae82`, **938,098 bytes**, SHA-256 `13d14c131ecaf13b8b141dbf5fcd57210ea2c4d2f7902bca9e8cd9d5a0e48f73`.
+- Added in-app encrypted export, integrity-check-only Verify Backup, and transactional empty-app restore; crypto/password tests are JVM-verified, native file picker and restore roundtrip **not device-tested**.
+- Separate package prevents overwriting earlier alpha apps, but cannot import their private data until a compatible export/upgrader exists.
+- Outstanding: first device export→verify→restore QA, durable release signing, scheduling reliability, accurate recurrence on travel and full iOS reminder parity.
