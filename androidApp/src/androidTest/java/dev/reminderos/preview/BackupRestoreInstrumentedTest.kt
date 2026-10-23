@@ -41,7 +41,7 @@ class BackupRestoreInstrumentedTest {
             assertTrue(db.act(one, row.revision, "DONE"))
             db.addRecurring("Hydrate", start, RecurrenceSchedule.DAILY, 0)
             assertEquals(1, db.rules().size)
-            return db.all().size
+            return countRows(db)
         }
     }
 
@@ -61,7 +61,7 @@ class BackupRestoreInstrumentedTest {
         }
         ReminderDatabase(context).use { db ->
             assertEquals(1, db.rules().size)
-            assertEquals(before, db.all().size)
+            assertEquals(before, countRows(db))
             assertEquals(1, db.all().count { it.status == "DONE" })
             assertTrue(db.all().any { it.seriesId != null })
             assertEquals(0, db.jobs().size) // Native registrations intentionally excluded.
@@ -103,6 +103,12 @@ class BackupRestoreInstrumentedTest {
         assertEquals(before, ReminderDatabase(context).use { it.all().size })
         file.fill(0)
     }
+
+    private fun countRows(db: ReminderDatabase): Int =
+        db.readableDatabase.rawQuery("SELECT COUNT(*) FROM reminders", null).use { cursor ->
+            cursor.moveToFirst()
+            cursor.getInt(0)
+        }
 
     private inline fun <T> ReminderBackupRepository.useRepo(
         action: (ReminderBackupRepository) -> T
