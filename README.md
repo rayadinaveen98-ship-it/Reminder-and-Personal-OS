@@ -88,3 +88,6 @@ Android Alpha v0.2 saves multiple one-time reminders on the device and provides 
 
 ### V0.5b verified shared runtime integration
 [Implementation, verified CI and migration limits](docs/KMP_RUNTIME_INTEGRATION_V05B.md). Both native reminder schedulers **execute shared Kotlin calendar membership logic at runtime**; Android resolves dates through Java Calendar and iOS through Foundation.Calendar. [CI #39939787871](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939787871) passed all 4 jobs, including **20/20 iOS simulator tests**; [Android emulator #39939788038](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39939788038) passed **10/10 native SQLite tests**. Android artifact `android-reminder-v05b-debug`; SHA-256 `c51bdc801226cd809e615075fd6e85f5d1b0613acc7d78ce4913b66931247d8c`. Data in old alpha packages is **not automatically migrated**; iOS remains simulator-only.
+
+### V0.5c storage-migration safety gate
+[Canonical portable snapshot and read-only Android/iOS inspectors](docs/PORTABLE_STORAGE_V05C.md) compare both platforms' existing data against a shared KMP schema. These preview tools never migrate or overwrite reminder stores; actual shared database, portable encrypted transfer and rollback are future development steps.
