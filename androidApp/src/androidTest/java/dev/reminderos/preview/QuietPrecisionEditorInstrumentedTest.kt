@@ -32,8 +32,9 @@ class QuietPrecisionEditorInstrumentedTest {
             walk(activity.window.decorView)
             assertTrue(texts.contains("New reminder"))
             assertTrue(texts.contains("Save reminder"))
-            assertTrue(texts.contains("Change date and time"))
-            assertTrue(texts.contains("Select weekly days"))
+            assertTrue(texts.contains("DATE & TIME"))
+            assertTrue(texts.contains("Choose weekdays"))
+            assertTrue(texts.contains("SCHEDULE"))
         } finally {
             instrumentation.runOnMainSync { activity.finish() }
         }
