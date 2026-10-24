@@ -1,6 +1,9 @@
 package dev.reminderos.preview
 
 import android.content.Intent
+import android.content.ContentValues
+import android.os.Environment
+import android.provider.MediaStore
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.view.View
@@ -54,17 +57,7 @@ class QuietPrecisionVisualShellInstrumentedTest {
             assertTrue(texts.contains("Library"))
             assertTrue(root.width > 0 && root.height > 0)
 
-            // A captured emulator render is saved for human comparison with R2.
-            val bitmap = Bitmap.createBitmap(root.width, root.height,
-                Bitmap.Config.ARGB_8888)
-            instrumentation.runOnMainSync { root.draw(Canvas(bitmap)) }
-            val folder = File(ctx.filesDir, "visual-qa").apply { mkdirs() }
-            val result = File(folder, "quiet_precision_r4a_today.png")
-            FileOutputStream(result).use { stream ->
-                assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream))
-            }
-            assertTrue(result.length() > 15_000L)
-            bitmap.recycle()
+            capture(instrumentation,root,"quiet_precision_r4a_today.png")
         } finally {
             instrumentation.runOnMainSync { activity.finish() }
         }
@@ -121,6 +114,33 @@ class QuietPrecisionVisualShellInstrumentedTest {
             assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG,100,stream))
         }
         assertTrue(file.length()>9_000L)
-        bitmap.recycle()
+
+        // Use emulator MediaStore to retain QA screenshots after Gradle's
+        // instrumentation task uninstalls its test/target packages.
+        // Never runs outside androidTest; no production app permission needed.
+        val resolver=ctx.contentResolver
+        val values=ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+            put(MediaStore.MediaColumns.RELATIVE_PATH,
+                Environment.DIRECTORY_PICTURES + "/QuietPrecisionQA")
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri=requireNotNull(
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values)
+        ) { "Could not create native QA screenshot in shared media" }
+        try {
+            val stream=requireNotNull(resolver.openOutputStream(uri)) {
+                "Could not write native QA screenshot"
+            }
+            stream.use { require(bitmap.compress(Bitmap.CompressFormat.PNG,100,it)) }
+            val ready=ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING,0) }
+            resolver.update(uri,ready,null,null)
+        } catch(e:Exception) {
+            resolver.delete(uri,null,null)
+            throw e
+        } finally {
+            bitmap.recycle()
+        }
     }
 }
