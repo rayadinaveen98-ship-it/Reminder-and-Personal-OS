@@ -327,6 +327,86 @@ internal class ReminderDatabase(context: Context) :
             result
         }
 
+    /** Archived definitions remain readable even after safe schedule replacement. */
+    @Synchronized fun archivedRules(): List<RecurrenceRule> =
+        readableDatabase.rawQuery(
+            "SELECT id,title,anchor_ms,mode,days_mask,paused,archived FROM recurrence_rules " +
+                "WHERE archived=1 ORDER BY updated_at DESC", null
+        ).use { cursor ->
+            val result = mutableListOf<RecurrenceRule>()
+            while (cursor.moveToNext()) result.add(
+                RecurrenceRule(cursor.getString(0), cursor.getString(1), cursor.getLong(2),
+                    cursor.getString(3), cursor.getInt(4), cursor.getInt(5) != 0,
+                    cursor.getInt(6) != 0)
+            )
+            result
+        }
+
+    /**
+     * R3d schedule replacement is an atomic SQLite transaction, not a mutable
+     * rewrite of historical slot keys. The original rule/occurrences remain
+     * archived and their Done/Skip/Unknown outcomes and events are unchanged.
+     * Only a new rule ID owns newly generated future occurrences.
+     *
+     * The full original definition is an optimistic concurrency guard because
+     * schema v3 does not have a recurrence-rule revision column.
+     */
+    @Synchronized fun replaceRoutine(
+        expected: RecurrenceRule, title: String, anchorMs: Long,
+        mode: String, daysMask: Int
+    ): String? {
+        val now = System.currentTimeMillis()
+        if (title.isBlank() || title.length > 200 || anchorMs <= now + 2_000L ||
+            mode !in setOf("DAILY", "WEEKLY", "MONTHLY") ||
+            (mode == "WEEKLY" && daysMask !in 1..127)) return null
+        val replacementId = UUID.randomUUID().toString()
+        return transaction { db ->
+            val actual = db.rawQuery(
+                "SELECT id,title,anchor_ms,mode,days_mask,paused,archived FROM recurrence_rules WHERE id=?",
+                arrayOf(expected.id)
+            ).use { cursor ->
+                if (!cursor.moveToFirst()) null else RecurrenceRule(
+                    cursor.getString(0), cursor.getString(1), cursor.getLong(2),
+                    cursor.getString(3), cursor.getInt(4), cursor.getInt(5) != 0,
+                    cursor.getInt(6) != 0
+                )
+            }
+            if (actual == null || actual != expected || actual.archived) return@transaction null
+
+            db.execSQL("UPDATE recurrence_rules SET archived=1,updated_at=? WHERE id=?",
+                arrayOf(now, expected.id))
+            val previous = db.rawQuery(
+                "SELECT id,revision FROM reminders WHERE series_id=? AND archived=0",
+                arrayOf(expected.id)
+            ).use { cursor ->
+                val rows = mutableListOf<Pair<String, Int>>()
+                while (cursor.moveToNext()) rows.add(cursor.getString(0) to cursor.getInt(1))
+                rows
+            }
+            for ((reminderId, revision) in previous) {
+                db.execSQL(
+                    "UPDATE reminders SET archived=1,revision=?,updated_at=? WHERE id=?",
+                    arrayOf(revision + 1, now, reminderId)
+                )
+                event(db, reminderId, "RULE_REPLACED", revision + 1, now)
+                retireRegistrations(db, reminderId)
+                newJob(db, reminderId, "CANCEL", revision, null, now)
+            }
+
+            db.execSQL(
+                """INSERT INTO recurrence_rules
+                   (id,title,anchor_ms,mode,days_mask,paused,archived,created_at,updated_at)
+                   VALUES(?,?,?,?,?,?,0,?,?)""",
+                arrayOf(replacementId, title.trim(), anchorMs, mode, daysMask,
+                    if (actual.paused) 1 else 0, now, now)
+            )
+            if (!actual.paused) {
+                materialize(db, replacementId, title.trim(), anchorMs, mode, daysMask, now)
+            }
+            replacementId
+        }
+    }
+
     @Synchronized fun pendingOccurrenceIdsForRoutine(seriesId: String): List<String> =
         readableDatabase.rawQuery(
             "SELECT id FROM reminders WHERE series_id=? AND status='PENDING'",

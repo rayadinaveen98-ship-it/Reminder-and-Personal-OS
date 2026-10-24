@@ -38,6 +38,7 @@ class QuietPrecisionReminderEditorActivity : Activity() {
     private var dueAt = System.currentTimeMillis() + 60 * 60_000L
     private var weekdays = 31 // Monday-Friday; bit 0 is Monday.
     private var editing: ReminderRecord? = null
+    private var replacing: RecurrenceRule? = null
     private var saving = false
 
     private val dark get() =
@@ -83,6 +84,27 @@ class QuietPrecisionReminderEditorActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val ruleId = intent.getStringExtra("rule_id")
+        if (ruleId != null) {
+            val rule = store.rule(ruleId)
+            if (rule == null || rule.archived) {
+                Toast.makeText(this, "Schedule changed. Reopen to refresh.", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
+            replacing = rule
+            weekdays = rule.daysMask
+            val anchor = Calendar.getInstance().apply { timeInMillis = rule.anchorMs }
+            val proposed = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, anchor.get(Calendar.HOUR_OF_DAY))
+                set(Calendar.MINUTE, anchor.get(Calendar.MINUTE))
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            if (proposed.timeInMillis <= System.currentTimeMillis() + 2_000L)
+                proposed.add(Calendar.DAY_OF_MONTH, 1)
+            dueAt = proposed.timeInMillis
+        }
         val id = intent.getStringExtra("reminder_id")
         if (id != null) {
             val row = store.get(id)
@@ -108,8 +130,10 @@ class QuietPrecisionReminderEditorActivity : Activity() {
         root.addView(button("← Back") { finish() },
             LinearLayout.LayoutParams(dp(106), dp(48)))
         gap(root, 14)
-        root.addView(text(if (editing == null) "New reminder" else "Edit reminder", 26f, true))
-        root.addView(text("Choose when you want to be reminded.", 14f, false, secondary))
+        root.addView(text(if (replacing != null) "Replace schedule" else if (editing == null) "New reminder" else "Edit reminder", 26f, true))
+        root.addView(text(if (replacing != null)
+            "Future dates use the new schedule. The original and its history remain archived."
+            else "Choose when you want to be reminded.", 14f, false, secondary))
         gap(root, 15)
 
         val panel = LinearLayout(this).apply {
@@ -120,7 +144,7 @@ class QuietPrecisionReminderEditorActivity : Activity() {
         panel.addView(text("REMINDER", 12f, true, secondary))
         titleField = EditText(this).apply {
             hint = "What do you need to remember?"
-            setText(editing?.title ?: "")
+            setText(editing?.title ?: replacing?.title ?: "")
             setSingleLine(true)
             maxLines = 1
             maxEms = 200
@@ -145,6 +169,11 @@ class QuietPrecisionReminderEditorActivity : Activity() {
             contentDescription = "Reminder recurrence"
         }
         panel.addView(repeatSelector)
+        replacing?.let { rule -> repeatSelector.setSelection(when (rule.mode) {
+            "DAILY" -> 1
+            "WEEKLY" -> 2
+            else -> 3
+        }) }
         if (editing != null) {
             panel.addView(text("Editing a one-time reminder. Manage recurring schedules in Tools.",
                 12f, false, secondary))
@@ -157,7 +186,8 @@ class QuietPrecisionReminderEditorActivity : Activity() {
         root.addView(panel)
         gap(root, 16)
 
-        saveButton = button(if (editing == null) "Save reminder" else "Save changes", true) {
+        saveButton = button(if (replacing != null) "Replace schedule" else
+            if (editing == null) "Save reminder" else "Save changes", true) {
             save()
         }
         root.addView(saveButton, LinearLayout.LayoutParams(-1, dp(52)))
@@ -229,8 +259,28 @@ class QuietPrecisionReminderEditorActivity : Activity() {
         saving = true
         saveButton.isEnabled = false
         try {
+            val originalRule = replacing
             val original = editing
-            if (original != null) {
+            if (originalRule != null) {
+                val mode = when (repeatSelector.selectedItemPosition) {
+                    1 -> "DAILY"
+                    2 -> "WEEKLY"
+                    3 -> "MONTHLY"
+                    else -> "ONCE"
+                }
+                if (mode == "ONCE") {
+                    Toast.makeText(this, "Replacement must be a recurring schedule",
+                        Toast.LENGTH_LONG).show()
+                    return
+                }
+                val oldIds = store.pendingOccurrenceIdsForRoutine(originalRule.id)
+                if (store.replaceRoutine(originalRule, title, dueAt, mode, weekdays) == null) {
+                    Toast.makeText(this, "Schedule changed. Reopen to refresh.",
+                        Toast.LENGTH_LONG).show()
+                    return
+                }
+                oldIds.forEach { ReminderAlarmEngine.dismiss(this, it) }
+            } else if (original != null) {
                 // Never edit an old recurring occurrence using the one-time path.
                 if (!store.edit(original.id, original.revision, title, dueAt)) {
                     Toast.makeText(this, "Reminder changed. Reopen to refresh.",
@@ -255,7 +305,9 @@ class QuietPrecisionReminderEditorActivity : Activity() {
             }
             store.ensureRecurring()
             engine.flush()
-            Toast.makeText(this, "Reminder saved", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this,
+                if (originalRule != null) "Schedule replaced; old history archived"
+                else "Reminder saved", Toast.LENGTH_SHORT).show()
             finish()
         } catch (e: Exception) {
             Toast.makeText(this, "Could not save reminder: " +

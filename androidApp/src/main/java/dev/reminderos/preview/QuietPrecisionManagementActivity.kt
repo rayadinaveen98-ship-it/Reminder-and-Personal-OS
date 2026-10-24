@@ -163,8 +163,30 @@ class QuietPrecisionManagementActivity : Activity() {
                 actions.addView(b, p)
             }
             card.addView(actions)
+            gap(card, 8)
+            card.addView(button("Replace future schedule") {
+                startActivity(Intent(this, QuietPrecisionReminderEditorActivity::class.java)
+                    .putExtra("rule_id", rule.id))
+            })
             body.addView(card)
             gap(body, 10)
+        }
+
+        val archivedRules = store.archivedRules()
+        if (archivedRules.isNotEmpty()) {
+            gap(body, 8)
+            body.addView(text("Archived schedules", 18f, true))
+            body.addView(text("Recorded outcomes are retained and remain readable.",
+                12f, false, secondary))
+            for (old in archivedRules.take(30)) {
+                val card = block()
+                card.addView(text(old.title, 15f, true))
+                card.addView(text(RecurrenceSchedule.description(old.mode, old.daysMask),
+                    12f, false, secondary))
+                card.addView(button("View past outcomes") { showRuleHistory(old) })
+                body.addView(card)
+                gap(body, 8)
+            }
         }
 
         gap(body, 7)
@@ -223,9 +245,8 @@ class QuietPrecisionManagementActivity : Activity() {
             startActivity(Intent(this, QuietPrecisionReminderEditorActivity::class.java))
         })
         gap(body, 10)
-        body.addView(text("Editing recurring rule times is not supported yet. " +
-            "Pause or archive preserves independent historical outcomes.",
-            12f, false, secondary))
+        body.addView(text("Replacing a schedule archives the original and creates new future dates. " +
+            "Past outcomes remain in Archived schedules.", 12f, false, secondary))
     }
 
     private fun setPaused(rule: RecurrenceRule) {

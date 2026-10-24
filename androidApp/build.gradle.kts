@@ -24,8 +24,8 @@ android {
         applicationId = "dev.reminderos.alpha.v05d"
         minSdk = 26
         targetSdk = 36
-        versionCode = 13
-        versionName = "0.6.2-r3c-alpha"
+        versionCode = 14
+        versionName = "0.6.3-r3d-alpha"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     if (signingConfigured) {

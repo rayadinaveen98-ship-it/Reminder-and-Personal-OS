@@ -12,7 +12,32 @@ struct QuietPrecisionReminderEditor: View {
     @State private var weekdays = 31 // ISO Monday = bit 0
     @State private var saving = false
     @State private var validation: String?
+    private let replacing: IOSRecurrenceRule?
     private let choices = ["Once", "Daily", "Weekly", "Monthly"]
+
+    init(replacing: IOSRecurrenceRule? = nil) {
+        self.replacing = replacing
+        _title = State(initialValue: replacing?.title ?? "")
+        let initial: Date
+        if let replacing {
+            if replacing.anchorAt > .now.addingTimeInterval(2) {
+                initial = replacing.anchorAt
+            } else {
+                let components = Calendar.current.dateComponents([.hour, .minute],
+                    from: replacing.anchorAt)
+                initial = Calendar.current.nextDate(after: .now,
+                    matching: components, matchingPolicy: .nextTime)
+                    ?? .now.addingTimeInterval(3600)
+            }
+        } else {
+            initial = .now.addingTimeInterval(3600)
+        }
+        _dueAt = State(initialValue: initial)
+        _repeatChoice = State(initialValue: replacing?.pattern == .daily ? "Daily" :
+            replacing?.pattern == .weekly ? "Weekly" :
+            replacing?.pattern == .monthly ? "Monthly" : "Once")
+        _weekdays = State(initialValue: replacing?.weekdayMask ?? 31)
+    }
     private let dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday",
                             "Friday", "Saturday", "Sunday"]
     private let blue = Color(red: 0.239, green: 0.388, blue: 0.812)
@@ -21,12 +46,20 @@ struct QuietPrecisionReminderEditor: View {
         let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
         return !name.isEmpty && name.count <= 200 &&
                dueAt > Date().addingTimeInterval(2) &&
-               (repeatChoice != "Weekly" || (1...127).contains(weekdays))
+               (repeatChoice != "Weekly" || (1...127).contains(weekdays)) &&
+               (replacing == nil || repeatChoice != "Once")
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                if replacing != nil {
+                    Section {
+                        Text("This creates a new future schedule and archives the original. Previous outcomes and history remain accessible in Archived schedules.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Section {
                     TextField("What do you need to remember?", text: $title)
                         .textInputAutocapitalization(.sentences)
@@ -43,7 +76,7 @@ struct QuietPrecisionReminderEditor: View {
 
                 Section("Repeat") {
                     Picker("Schedule", selection: $repeatChoice) {
-                        ForEach(choices, id: \.self) { Text($0).tag($0) }
+                        ForEach(replacing == nil ? choices : Array(choices.dropFirst()), id: \.self) { Text($0).tag($0) }
                     }
                     .pickerStyle(.menu)
                     .accessibilityIdentifier("quietReminderRepeat")
@@ -74,7 +107,7 @@ struct QuietPrecisionReminderEditor: View {
                             if saving {
                                 ProgressView().tint(.white)
                             } else {
-                                Text("Save reminder").font(.headline)
+                                Text(replacing == nil ? "Save reminder" : "Replace schedule").font(.headline)
                             }
                             Spacer()
                         }
@@ -96,7 +129,7 @@ struct QuietPrecisionReminderEditor: View {
                     }
                 }
             }
-            .navigationTitle("New reminder")
+            .navigationTitle(replacing == nil ? "New reminder" : "Replace schedule")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -117,7 +150,12 @@ struct QuietPrecisionReminderEditor: View {
         let cleaned = title.trimmingCharacters(in: .whitespacesAndNewlines)
         Task { @MainActor in
             let saved: Bool
-            switch repeatChoice {
+            if let replacing {
+                let pattern: IOSRepeatPattern = repeatChoice == "Daily" ? .daily :
+                    (repeatChoice == "Weekly" ? .weekly : .monthly)
+                saved = await store.replaceRecurring(expected: replacing,
+                    title: cleaned, dueAt: dueAt, pattern: pattern, weekdayMask: weekdays)
+            } else { switch repeatChoice {
             case "Daily", "Weekly", "Monthly":
                 let pattern: IOSRepeatPattern = repeatChoice == "Daily" ? .daily :
                     (repeatChoice == "Weekly" ? .weekly : .monthly)
@@ -127,6 +165,7 @@ struct QuietPrecisionReminderEditor: View {
                 )
             default:
                 saved = await store.create(title: cleaned, dueAt: dueAt)
+            }
             }
             saving = false
             if saved {
