@@ -42,8 +42,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: |
-            gradle -p androidApp --no-daemon connectedDebugAndroidTest \
-              -Pandroid.testInstrumentationRunnerArguments.class=dev.reminderos.preview.QuietPrecisionVisualShellInstrumentedTest
+            gradle -p androidApp --no-daemon connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.reminderos.preview.QuietPrecisionVisualShellInstrumentedTest --stacktrace
             mkdir -p visual-qa-output
             for filename in quiet_precision_r4a_today.png quiet_precision_r4b_editor.png quiet_precision_r4b_management.png; do
               adb shell run-as dev.reminderos.alpha.v05d cat "files/visual-qa/$filename" > "visual-qa-output/$filename"
