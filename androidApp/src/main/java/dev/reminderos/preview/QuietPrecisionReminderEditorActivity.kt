@@ -9,6 +9,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -30,6 +31,7 @@ import java.util.Date
 class QuietPrecisionReminderEditorActivity : Activity() {
     private val store by lazy { ReminderDatabase(this) }
     private val engine by lazy { ReminderAlarmEngine(this) }
+    private val ui by lazy { QpVisual(this) }
     private lateinit var titleField: EditText
     private lateinit var dueView: TextView
     private lateinit var repeatSelector: Spinner
@@ -121,82 +123,154 @@ class QuietPrecisionReminderEditorActivity : Activity() {
         showEditor()
     }
 
+    /**
+     * R4b: R2 visual hierarchy while retaining existing validation/save logic.
+     * The editor does not add unsupported notes/follow-up data fields.
+     */
     private fun showEditor() {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(canvas)
-            setPadding(dp(20), dp(22), dp(20), dp(20))
+        val root = ui.column().apply {
+            setBackgroundColor(ui.canvas)
+            setPadding(ui.px(20), ui.px(14), ui.px(20), ui.px(28))
         }
-        root.addView(button("← Back") { finish() },
-            LinearLayout.LayoutParams(dp(106), dp(48)))
-        gap(root, 14)
-        root.addView(text(if (replacing != null) "Replace schedule" else if (editing == null) "New reminder" else "Edit reminder", 26f, true))
-        root.addView(text(if (replacing != null)
-            "Future dates use the new schedule. The original and its history remain archived."
-            else "Choose when you want to be reminded.", 14f, false, secondary))
-        gap(root, 15)
+        root.addView(ui.action("‹  Back", secondary = true) { finish() },
+            LinearLayout.LayoutParams(ui.px(112), ui.px(48)))
+        root.addView(ui.space(20))
+        val heading = when {
+            replacing != null -> "Replace schedule"
+            editing != null -> "Edit reminder"
+            else -> "New reminder"
+        }
+        root.addView(ui.label("REMINDER DETAILS"))
+        root.addView(ui.space(5))
+        root.addView(ui.heading(heading, 27f))
+        root.addView(ui.space(9))
+        if (replacing != null) {
+            val notice = ui.card(ui.tonal, ui.tonal, 14)
+            notice.addView(ui.text(
+                "A new schedule will replace future reminders. Previous outcomes stay archived.",
+                13f, color = ui.tonalInk))
+            root.addView(notice)
+            root.addView(ui.space(16))
+        } else {
+            root.addView(ui.text("Create a clear reminder for what matters.",
+                13f, color = ui.muted))
+            root.addView(ui.space(18))
+        }
 
-        val panel = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = shape(surface, 16)
-            setPadding(dp(16), dp(18), dp(16), dp(18))
-        }
-        panel.addView(text("REMINDER", 12f, true, secondary))
+        root.addView(ui.label("REMINDER TITLE"))
+        root.addView(ui.space(7))
         titleField = EditText(this).apply {
-            hint = "What do you need to remember?"
+            hint = "e.g. Call Mom"
             setText(editing?.title ?: replacing?.title ?: "")
             setSingleLine(true)
-            maxLines = 1
-            maxEms = 200
-            setTextColor(ink)
-            setHintTextColor(secondary)
+            filters = arrayOf(android.text.InputFilter.LengthFilter(200))
+            setTextColor(ui.ink)
+            setHintTextColor(ui.muted)
+            textSize = 15f
+            background = ui.shape(ui.surface, 11)
+            setPadding(ui.px(14), ui.px(12), ui.px(14), ui.px(12))
+            minimumHeight = ui.px(54)
             contentDescription = "Reminder title"
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
         }
-        panel.addView(titleField)
-        gap(panel, 12)
-        panel.addView(text("DATE & TIME", 12f, true, secondary))
-        dueView = text(formattedDue(), 16f, true)
-        panel.addView(dueView)
-        panel.addView(button("Change date and time") { chooseDateTime() })
-        gap(panel, 12)
+        root.addView(titleField, LinearLayout.LayoutParams(-1, ui.px(56)))
+        root.addView(ui.space(18))
 
-        panel.addView(text("REPEAT", 12f, true, secondary))
+        root.addView(ui.label("DATE & TIME"))
+        root.addView(ui.space(8))
+        val dateCard = ui.card(ui.surface, ui.outline, 14)
+        dateCard.isClickable = true
+        dateCard.isFocusable = true
+        dateCard.contentDescription = "Edit reminder date and time"
+        dateCard.setOnClickListener { chooseDateTime() }
+        val dateRow = ui.row()
+        dateRow.addView(ui.insetIcon(R.drawable.qp_ic_calendar))
+        val dueColumn = ui.column().apply {
+            setPadding(ui.px(12),0,0,0)
+            addView(ui.text("Scheduled for",12f,color=ui.muted))
+            addView(ui.space(3))
+        }
+        dueView = ui.text(formattedDue(), 16f, android.graphics.Typeface.BOLD)
+        dueColumn.addView(dueView)
+        dateRow.addView(dueColumn, LinearLayout.LayoutParams(0,-2,1f))
+        dateRow.addView(ui.icon(R.drawable.qp_ic_chevron,ui.muted))
+        dateCard.addView(dateRow)
+        root.addView(dateCard)
+        root.addView(ui.space(18))
+
+        root.addView(ui.label("SCHEDULE"))
+        root.addView(ui.space(8))
+        val options = arrayOf("Once", "Daily", "Selected weekdays", "Monthly")
         repeatSelector = Spinner(this).apply {
-            adapter = ArrayAdapter(this@QuietPrecisionReminderEditorActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                arrayOf("Once", "Daily", "Selected weekdays", "Monthly"))
+            adapter = object : ArrayAdapter<String>(
+                this@QuietPrecisionReminderEditorActivity,
+                android.R.layout.simple_spinner_dropdown_item, options) {
+                override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                    return ui.text(getItem(position) ?: "Once", 14f,
+                        android.graphics.Typeface.BOLD).apply {
+                        setPadding(ui.px(14),ui.px(8),ui.px(12),ui.px(8))
+                    }
+                }
+                override fun getDropDownView(position: Int, convertView: View?,
+                                             parent: ViewGroup): View {
+                    return ui.text(getItem(position) ?: "Once", 14f).apply {
+                        background = ui.shape(ui.surface, 11)
+                        setPadding(ui.px(15),ui.px(13),ui.px(15),ui.px(13))
+                    }
+                }
+            }
             isEnabled = editing == null
+            background = ui.shape(ui.surface, 11)
+            minimumHeight = ui.px(54)
             contentDescription = "Reminder recurrence"
         }
-        panel.addView(repeatSelector)
-        replacing?.let { rule -> repeatSelector.setSelection(when (rule.mode) {
-            "DAILY" -> 1
-            "WEEKLY" -> 2
-            else -> 3
-        }) }
-        if (editing != null) {
-            panel.addView(text("Editing a one-time reminder. Manage recurring schedules in Tools.",
-                12f, false, secondary))
+        replacing?.let { rule ->
+            repeatSelector.setSelection(when (rule.mode) {
+                "DAILY" -> 1
+                "WEEKLY" -> 2
+                else -> 3
+            })
         }
-        weeklyChoice = button("Select weekly days") { chooseWeekdays() }
+        val recurrenceCard = ui.card(ui.surface,ui.outline,12)
+        val recurrenceRow = ui.row()
+        recurrenceRow.addView(ui.insetIcon(R.drawable.qp_ic_calendar))
+        recurrenceRow.addView(ui.text("Repeat",14f,android.graphics.Typeface.BOLD)
+            .apply { setPadding(ui.px(12),0,0,0) },LinearLayout.LayoutParams(0,-2,1f))
+        recurrenceCard.addView(recurrenceRow)
+        recurrenceCard.addView(ui.space(8))
+        recurrenceCard.addView(repeatSelector,
+            LinearLayout.LayoutParams(-1,ui.px(52)))
+        recurrenceCard.addView(ui.space(8))
+        weeklyChoice = button("Choose weekdays") { chooseWeekdays() }
         weeklyChoice.isEnabled = editing == null
-        panel.addView(weeklyChoice)
-        panel.addView(text("For weekly reminders, choose at least one day. " +
-            "Each due occurrence keeps its own outcome.", 12f, false, secondary))
-        root.addView(panel)
-        gap(root, 16)
+        recurrenceCard.addView(weeklyChoice, LinearLayout.LayoutParams(-1,ui.px(48)))
+        root.addView(recurrenceCard)
+        root.addView(ui.space(11))
+
+        val followup = ui.card(ui.surface,ui.outline,13)
+        val followupRow = ui.row()
+        followupRow.addView(ui.insetIcon(R.drawable.qp_ic_calendar))
+        val followupColumn=ui.column().apply {
+            setPadding(ui.px(12),0,0,0)
+            addView(ui.text("Follow-up",14f,android.graphics.Typeface.BOLD))
+            addView(ui.text("Not configurable in this alpha",12f,color=ui.muted))
+        }
+        followupRow.addView(followupColumn,LinearLayout.LayoutParams(0,-2,1f))
+        followup.addView(followupRow)
+        root.addView(followup)
+        root.addView(ui.space(20))
 
         saveButton = button(if (replacing != null) "Replace schedule" else
-            if (editing == null) "Save reminder" else "Save changes", true) {
-            save()
-        }
-        root.addView(saveButton, LinearLayout.LayoutParams(-1, dp(52)))
-        gap(root, 12)
-        root.addView(text("Saved reminders work offline. Notification delivery depends on " +
-            "device permissions and scheduling limits.", 12f, false, secondary))
+            if (editing == null) "Save reminder" else "Save changes", true) { save() }
+        root.addView(saveButton, LinearLayout.LayoutParams(-1,ui.px(54)))
+        root.addView(ui.space(10))
+        root.addView(ui.text("Saved offline. Notification delivery depends on device settings.",
+            12f, color=ui.muted))
+
         setContentView(ScrollView(this).apply {
             isFillViewport = true
-            addView(root, ViewGroup.LayoutParams(-1, -2))
+            setBackgroundColor(ui.canvas)
+            addView(root,ViewGroup.LayoutParams(-1,-2))
         })
     }
 

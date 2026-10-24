@@ -38,6 +38,7 @@ class QuietPrecisionManagementActivity : Activity() {
     }
     private val store by lazy { ReminderDatabase(this) }
     private val engine by lazy { ReminderAlarmEngine(this) }
+    private val ui by lazy { QpVisual(this) }
     private var settings = false
     private val dark get() = (resources.configuration.uiMode and
         Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
@@ -75,11 +76,7 @@ class QuietPrecisionManagementActivity : Activity() {
         }
     private fun gap(target: LinearLayout, amount: Int = 12) =
         target.addView(View(this), LinearLayout.LayoutParams(1, dp(amount)))
-    private fun block(): LinearLayout = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        background = shape(surface)
-        setPadding(dp(16), dp(15), dp(16), dp(15))
-    }
+    private fun block(): LinearLayout = ui.card(pad=16)
     private fun message(msg: String) =
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
 
@@ -93,48 +90,59 @@ class QuietPrecisionManagementActivity : Activity() {
         render()
     }
 
+    /** R4b visual shell around unchanged reminder-management operations. */
     private fun render() {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(canvas)
-            setPadding(dp(20), dp(16), dp(20), dp(12))
+        val root=ui.column().apply {
+            setBackgroundColor(ui.canvas)
+            setPadding(ui.px(20),ui.px(14),ui.px(20),ui.px(10))
         }
-        root.addView(button("← Back") { finish() },
-            LinearLayout.LayoutParams(dp(108), dp(48)))
-        gap(root, 13)
-        root.addView(text(if (settings) "Settings" else "Manage reminders", 26f, true))
-        gap(root, 12)
+        root.addView(ui.action("‹  Back",secondary=true) { finish() },
+            LinearLayout.LayoutParams(ui.px(112),ui.px(48)))
+        root.addView(ui.space(18))
+        root.addView(ui.label("YOUR REMINDERS"))
+        root.addView(ui.space(5))
+        root.addView(ui.heading(if(settings) "Settings" else "Manage reminders",27f))
+        root.addView(ui.space(17))
 
-        val switcher = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        for ((page, label) in listOf(false to "Reminders", true to "Settings")) {
-            val child = button(label, page == settings) {
-                settings = page
+        val segmented=ui.row().apply {
+            background=ui.shape(ui.secondarySurface,13,ui.secondarySurface)
+            setPadding(ui.px(4),ui.px(4),ui.px(4),ui.px(4))
+        }
+        for((page,name) in listOf(false to "Reminders",true to "Settings")){
+            val selected=page==settings
+            val item=ui.action(name,selected=selected) {
+                settings=page
                 render()
+            }.apply {
+                background=ui.shape(if(selected) ui.surface else ui.secondarySurface,10,
+                    if(selected) ui.outline else ui.secondarySurface)
+                setTextColor(if(selected) ui.ink else ui.muted)
+                contentDescription=name + if(selected) ", selected" else ""
             }
-            val p = LinearLayout.LayoutParams(0, dp(48), 1f)
-            if (switcher.childCount > 0) p.marginStart = dp(10)
-            switcher.addView(child, p)
+            segmented.addView(item,LinearLayout.LayoutParams(0,ui.px(48),1f))
         }
-        root.addView(switcher)
-        gap(root, 16)
+        root.addView(segmented)
+        root.addView(ui.space(16))
 
-        val scroller = ScrollView(this).apply { isFillViewport = true }
-        val body = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, 0, 0, dp(22))
+        val body=ui.column().apply { setPadding(0,0,0,ui.px(25)) }
+        try{
+            if(settings) settingsPage(body) else remindersPage(body)
+        }catch(error:Exception){
+            val problem=ui.card(ui.tonal,ui.tonal)
+            problem.addView(ui.heading("Unable to load local reminders",17f))
+            problem.addView(ui.space(8))
+            problem.addView(ui.text("Saved records were not cleared. The original tools " +
+                "can be used to inspect or recover data.",13f,color=ui.muted))
+            problem.addView(ui.space(10))
+            problem.addView(ui.action("Open recovery tools",selected=true){openTools()})
+            body.addView(problem)
         }
-        try {
-            if (settings) settingsPage(body) else remindersPage(body)
-        } catch (error: Exception) {
-            body.addView(text("Unable to load local reminders", 18f, true))
-            gap(body)
-            body.addView(text("Stored records were not cleared. You can open the original " +
-                "recovery tools to inspect the issue.", 14f, false, secondary))
-            gap(body)
-            body.addView(button("Open recovery tools") { openTools() })
+        val scroll=ScrollView(this).apply {
+            isFillViewport=true
+            clipToPadding=false
+            addView(body)
         }
-        scroller.addView(body)
-        root.addView(scroller, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         setContentView(root)
     }
 
