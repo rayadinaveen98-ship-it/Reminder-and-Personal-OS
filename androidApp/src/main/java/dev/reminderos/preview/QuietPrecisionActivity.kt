@@ -84,6 +84,13 @@ class QuietPrecisionActivity : Activity() {
     private fun date(epoch: Long): String =
         DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(epoch))
     private fun openTools() = startActivity(Intent(this, MainActivity::class.java))
+    private fun openManagement(settings: Boolean = false) {
+        val intent = Intent(this, QuietPrecisionManagementActivity::class.java)
+        intent.putExtra(QuietPrecisionManagementActivity.EXTRA_PAGE,
+            if (settings) QuietPrecisionManagementActivity.PAGE_SETTINGS else
+                QuietPrecisionManagementActivity.PAGE_SCHEDULES)
+        startActivity(intent)
+    }
     private fun openEditor(reminderId: String? = null) {
         val intent = Intent(this, QuietPrecisionReminderEditorActivity::class.java)
         if (reminderId != null) intent.putExtra("reminder_id", reminderId)
@@ -120,7 +127,7 @@ class QuietPrecisionActivity : Activity() {
         }
         val heading = label("Reminder OS", 19f, true)
         header.addView(heading, LinearLayout.LayoutParams(0, dp(48), 1f))
-        val tools = cta("Tools", false) { openTools() }
+        val tools = cta("Settings", false) { openManagement(true) }
         header.addView(tools, LinearLayout.LayoutParams(dp(96), dp(48)))
         root.addView(header)
 
@@ -335,7 +342,7 @@ class QuietPrecisionActivity : Activity() {
                 13f, false, muted))
         }
         parent.addView(spacer(12))
-        parent.addView(cta("Manage reminders and archives") { openTools() })
+        parent.addView(cta("Manage reminders and archives") { openManagement() })
     }
 
     private fun insights(parent: LinearLayout) {
