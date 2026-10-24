@@ -9,6 +9,7 @@
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".QuietPrecisionReminderEditorActivity" android:exported="false" />
         <activity android:name=".QuietPrecisionActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

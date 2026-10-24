@@ -84,6 +84,11 @@ class QuietPrecisionActivity : Activity() {
     private fun date(epoch: Long): String =
         DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(epoch))
     private fun openTools() = startActivity(Intent(this, MainActivity::class.java))
+    private fun openEditor(reminderId: String? = null) {
+        val intent = Intent(this, QuietPrecisionReminderEditorActivity::class.java)
+        if (reminderId != null) intent.putExtra("reminder_id", reminderId)
+        startActivity(intent)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -195,7 +200,7 @@ class QuietPrecisionActivity : Activity() {
                 addView(spacer(8))
                 addView(label("Create a reminder to get started.", 14f, false, muted))
                 addView(spacer(12))
-                addView(cta("Add reminder") { openTools() })
+                addView(cta("Add reminder") { openEditor() })
             }
             parent.addView(info)
         } else {
@@ -216,7 +221,7 @@ class QuietPrecisionActivity : Activity() {
             parent.addView(spacer(9))
         }
         parent.addView(spacer(16))
-        parent.addView(cta("+ New reminder") { openTools() })
+        parent.addView(cta("+ New reminder") { openEditor() })
         parent.addView(spacer(10))
         parent.addView(label("Unanswered reminders stay unresolved until you respond.",
             12f, false, muted))
@@ -250,7 +255,27 @@ class QuietPrecisionActivity : Activity() {
             }
             card.addView(actions)
         }
+        card.addView(spacer(8))
+        val tools = LinearLayout(this)
+        if (item.status == "PENDING" && item.seriesId == null) {
+            val edit = cta("Edit", false) { openEditor(item.id) }
+            tools.addView(edit, LinearLayout.LayoutParams(0, dp(48), 1f))
+        }
+        val history = cta("History", false) { showHistory(item) }
+        val historyLayout = LinearLayout.LayoutParams(0, dp(48), 1f)
+        if (tools.childCount > 0) historyLayout.marginStart = dp(8)
+        tools.addView(history, historyLayout)
+        card.addView(tools)
         return card
+    }
+
+    private fun showHistory(item: ReminderRecord) {
+        val events = store.recentEvents(item.id)
+        val body = if (events.isEmpty()) "No recorded actions" else events.joinToString("\n") {
+            it.kind + " · " + date(it.atMs)
+        }
+        AlertDialog.Builder(this).setTitle(item.title)
+            .setMessage(body).setPositiveButton("Close", null).show()
     }
 
     private fun respond(item: ReminderRecord, action: String) {
