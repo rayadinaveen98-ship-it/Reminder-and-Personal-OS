@@ -16,18 +16,21 @@ final class SafeScheduleReplaceTests: XCTestCase {
     func testReplacePreservesDoneHistoryAndCancelsOldVisibleSlots() async throws {
         let (store, url) = try temporaryStore()
         let future = Date.now.addingTimeInterval(172800)
-        XCTAssertTrue(await store.createRecurring(
+        let created = await store.createRecurring(
             title: "Original", dueAt: future, pattern: .daily, weekdayMask: 0
-        ))
+        )
+        XCTAssertTrue(created)
         let old = try XCTUnwrap(store.activeRules.first)
         let occurrence = try XCTUnwrap(store.reminders.first { $0.seriesID == old.id })
-        XCTAssertTrue(await store.respond(
+        let completed = await store.respond(
             id: occurrence.id, revision: occurrence.revision, action: "DONE"
-        ))
-        XCTAssertTrue(await store.replaceRecurring(
+        )
+        XCTAssertTrue(completed)
+        let replaced = await store.replaceRecurring(
             expected: old, title: "Revised", dueAt: future.addingTimeInterval(3600),
             pattern: .weekly, weekdayMask: 31
-        ))
+        )
+        XCTAssertTrue(replaced)
         XCTAssertEqual(store.activeRules.count, 1)
         XCTAssertEqual(store.archivedRules.count, 1)
         XCTAssertNotEqual(store.activeRules.first?.id, old.id)
@@ -47,22 +50,25 @@ final class SafeScheduleReplaceTests: XCTestCase {
     func testInvalidOrStaleReplacementLeavesSnapshotUnchanged() async throws {
         let (store, url) = try temporaryStore()
         let future = Date.now.addingTimeInterval(172800)
-        XCTAssertTrue(await store.createRecurring(
+        let created = await store.createRecurring(
             title: "Original", dueAt: future, pattern: .weekly, weekdayMask: 31
-        ))
+        )
+        XCTAssertTrue(created)
         let original = try XCTUnwrap(store.activeRules.first)
         let before = try Data(contentsOf: url)
-        XCTAssertFalse(await store.replaceRecurring(
+        let invalid = await store.replaceRecurring(
             expected: original, title: "", dueAt: future,
             pattern: .weekly, weekdayMask: 31
-        ))
+        )
+        XCTAssertFalse(invalid)
         XCTAssertEqual(try Data(contentsOf: url), before)
         await store.setRoutinePaused(id: original.id, paused: true)
         let pausedSnapshot = try Data(contentsOf: url)
-        XCTAssertFalse(await store.replaceRecurring(
+        let stale = await store.replaceRecurring(
             expected: original, title: "Stale", dueAt: future,
             pattern: .daily, weekdayMask: 0
-        ))
+        )
+        XCTAssertFalse(stale)
         XCTAssertEqual(try Data(contentsOf: url), pausedSnapshot)
     }
 }
