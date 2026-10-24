@@ -12,7 +12,8 @@
         <activity android:name=".QuietPrecisionReminderEditorActivity" android:exported="false" />
         <activity android:name=".QuietPrecisionManagementActivity" android:exported="false" />
         <activity android:name=".QuietPrecisionHistoryActivity" android:exported="false" />
-        <activity android:name=".QuietPrecisionActivity" android:exported="true">
+        <activity android:name=".QuietPrecisionActivity" android:exported="false" />
+        <activity android:name=".QuietPrecisionVisualActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
