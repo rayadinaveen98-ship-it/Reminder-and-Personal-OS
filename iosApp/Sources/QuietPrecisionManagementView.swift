@@ -14,6 +14,7 @@ struct QuietPrecisionManagementView: View {
     @State private var showingBackupTools = false
     @State private var selectedReminder: IOSReminder?
     @State private var showingEditor = false
+    @State private var showingHistory = false
 
     private let blue = Color(red: 0.239, green: 0.388, blue: 0.812)
 
@@ -32,6 +33,14 @@ struct QuietPrecisionManagementView: View {
                     schedulesSection
                     if !store.archivedRules.isEmpty { archivedSchedulesSection }
                     oneTimeSection
+                    Section {
+                        Button {
+                            showingHistory = true
+                        } label: {
+                            Label("Browse full History & Archive", systemImage: "archivebox")
+                                .frame(minHeight: 44)
+                        }
+                    }
                     Section {
                         Button {
                             showingEditor = true
@@ -57,6 +66,9 @@ struct QuietPrecisionManagementView: View {
         .tint(blue)
         .sheet(isPresented: $showingBackupTools) {
             PreviewContentView()
+        }
+        .sheet(isPresented: $showingHistory) {
+            QuietPrecisionHistoryView()
         }
         .sheet(isPresented: $showingEditor) {
             QuietPrecisionReminderEditor()
