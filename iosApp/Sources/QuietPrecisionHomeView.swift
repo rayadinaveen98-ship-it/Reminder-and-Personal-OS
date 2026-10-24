@@ -9,6 +9,7 @@ struct QuietPrecisionHomeView: View {
     @State private var selected: Destination = .today
     @State private var showingTools = false
     @State private var showingManagement = false
+    @State private var showingHistory = false
     @State private var showingEditor = false
     @State private var selectedReminder: IOSReminder?
     @State private var pendingSkip: IOSReminder?
@@ -66,6 +67,9 @@ struct QuietPrecisionHomeView: View {
         }
         .sheet(isPresented: $showingManagement) {
             QuietPrecisionManagementView()
+        }
+        .sheet(isPresented: $showingHistory) {
+            QuietPrecisionHistoryView()
         }
         .sheet(isPresented: $showingEditor) {
             QuietPrecisionReminderEditor()
@@ -273,6 +277,13 @@ struct QuietPrecisionHomeView: View {
                     reminderCard(item)
                 }
             }
+            Button {
+                showingHistory = true
+            } label: {
+                Label("Browse History & Archive", systemImage: "archivebox")
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.bordered)
             Button {
                 showingManagement = true
             } label: {
