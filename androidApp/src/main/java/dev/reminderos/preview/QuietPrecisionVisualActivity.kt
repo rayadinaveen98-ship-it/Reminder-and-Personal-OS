@@ -268,7 +268,7 @@ class QuietPrecisionVisualActivity : Activity() {
             val tile=ui.column(8).apply{
                 gravity=Gravity.CENTER
                 background=ui.shape(ui.surface,14)
-                minHeight=ui.px(76)
+                minimumHeight=ui.px(76)
                 addView(ui.text(entry.first,22f,Typeface.BOLD,ui.ink))
                 addView(spacer(3))
                 addView(ui.text(entry.second,11f,Typeface.NORMAL,ui.muted))
@@ -327,7 +327,7 @@ class QuietPrecisionVisualActivity : Activity() {
     private fun reminderRow(item: ReminderRecord, overdue: Boolean=false): LinearLayout {
         val row=ui.row().apply {
             setPadding(ui.px(4),ui.px(13),ui.px(3),ui.px(13))
-            minHeight=ui.px(67)
+            minimumHeight=ui.px(67)
             isClickable=true
             isFocusable=true
             contentDescription=item.title+", "+date(item.dueAt)+
