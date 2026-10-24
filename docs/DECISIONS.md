@@ -122,3 +122,15 @@ Relevant draft specifications: [PRD](PRODUCT_REQUIREMENTS_V1.md), [Reminder Cont
 - D-079 (TEMPORARY): Require 12–128 printable ASCII password characters to avoid nonmatching Unicode normalization on JVM and Apple runtimes; later Unicode support needs a new explicit crypto profile.
 - D-080 (SAFETY GATE): RPOSB2 portable export and read-only verification are available on both apps; importing/restoring such files is deliberately unavailable until atomic transaction, backup-before-import, unchanged-source, rollback and post-import verification are tested.
 - D-081 (VERIFIED): [KMP CI #39947028584](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39947028584) passed with 27 iOS simulator tests and [emulator #39947028457](https://github.com/rayadinaveen98-ship-it/Reminder-and-Personal-OS/actions/runs/39947028457) passed 16 native Android tests. Same independent AES-GCM fixture decrypted by both.
+
+## R2 Design decisions — 2026-10-24
+
+| ID | Decision | Status | Reason / follow-up |
+|---|---|---|---|
+| D-010 | Select **Quiet Precision** for complete Personal OS UI redesign | **ACCEPTED** | Owner explicitly selected direction A after three visual options in R1 |
+| D-011 | Four primary tabs: Today, Track, Insights, Library + Quick Add | PROPOSED | R2 implemented only in interactive design study; full native review required |
+| D-012 | Orbital-focus app icon candidate | PROPOSED | Name, final logo, monochrome mark and distinctiveness not signed off |
+| D-013 | One-time first-use welcome motion (~1.8s), no blocking normal launches | PROPOSED | Android/iPhone perf and reduced-motion tests needed |
+| D-014 | New UI must preserve native reminder engines, existing data and event semantics | ACCEPTED (guardrail) | Avoid visual redesign causing lost reminders or false Done/Skipped events |
+| D-015 | Safe V0.5e portable import/rollback before any destructive storage migration | ACCEPTED (safety gate) | R2 design may continue independently of data writes |
+| D-016 | Full trackers/goals/analytics work requires separate implementation milestones | ACCEPTED (scope fact) | Concept mockups are not functional Personal OS features |
