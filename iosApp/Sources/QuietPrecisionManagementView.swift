@@ -9,6 +9,7 @@ struct QuietPrecisionManagementView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selection = 0
     @State private var ruleToArchive: IOSRecurrenceRule?
+    @State private var ruleToReplace: IOSRecurrenceRule?
     @State private var reminderToArchive: IOSReminder?
     @State private var showingBackupTools = false
     @State private var selectedReminder: IOSReminder?
@@ -29,6 +30,7 @@ struct QuietPrecisionManagementView: View {
                 }
                 if selection == 0 {
                     schedulesSection
+                    if !store.archivedRules.isEmpty { archivedSchedulesSection }
                     oneTimeSection
                     Section {
                         Button {
@@ -58,6 +60,9 @@ struct QuietPrecisionManagementView: View {
         }
         .sheet(isPresented: $showingEditor) {
             QuietPrecisionReminderEditor()
+        }
+        .sheet(item: $ruleToReplace) { rule in
+            QuietPrecisionReminderEditor(replacing: rule)
         }
         .sheet(item: $selectedReminder) { reminder in
             QuietPrecisionReminderDetail(reminder: reminder)
@@ -161,13 +166,48 @@ struct QuietPrecisionManagementView: View {
                             .buttonStyle(.bordered)
                         }
                     }
+                    Button("Replace future schedule") {
+                        ruleToReplace = rule
+                    }
+                    .font(.subheadline.weight(.medium))
                     .padding(.vertical, 4)
                 }
             }
         } header: {
             Text("Repeating schedules")
         } footer: {
-            Text("Each due date has its own outcome. Changing the time of an existing recurring rule is not supported in this alpha.")
+            Text("Replacing archives the existing schedule while retaining its recorded outcomes.")
+        }
+    }
+
+    private var archivedSchedulesSection: some View {
+        Section("Archived schedules") {
+            ForEach(store.archivedRules) { rule in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(rule.title).font(.headline)
+                    Text(IOSCalendarRecurrence.summary(rule))
+                        .font(.caption).foregroundStyle(.secondary)
+                    NavigationLink("Past outcomes") {
+                        List {
+                            let outcomes = store.routineHistory(id: rule.id)
+                            if outcomes.isEmpty {
+                                Text("No past due occurrences recorded.")
+                            }
+                            ForEach(outcomes) { entry in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(entry.originalDueAt, format:
+                                        .dateTime.day().month().year().hour().minute())
+                                    Text(entry.outcome == .done ? "Done" :
+                                        entry.outcome == .skipped ? "Skipped" : "Unresolved")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .navigationTitle("Archived history")
+                    }
+                }
+                .padding(.vertical, 3)
+            }
         }
     }
 
