@@ -8,6 +8,7 @@ struct QuietPrecisionHomeView: View {
     @ObservedObject private var store = IOSReminderStore.shared
     @State private var selected: Destination = .today
     @State private var showingTools = false
+    @State private var showingManagement = false
     @State private var showingEditor = false
     @State private var selectedReminder: IOSReminder?
     @State private var pendingSkip: IOSReminder?
@@ -63,6 +64,9 @@ struct QuietPrecisionHomeView: View {
         .sheet(isPresented: $showingTools) {
             PreviewContentView()
         }
+        .sheet(isPresented: $showingManagement) {
+            QuietPrecisionManagementView()
+        }
         .sheet(isPresented: $showingEditor) {
             QuietPrecisionReminderEditor()
         }
@@ -117,7 +121,7 @@ struct QuietPrecisionHomeView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    showingTools = true
+                    showingManagement = true
                 } label: {
                     Image(systemName: "slider.horizontal.3")
                 }
@@ -269,7 +273,14 @@ struct QuietPrecisionHomeView: View {
                     reminderCard(item)
                 }
             }
-            primaryAction("Manage reminders, archive and backup", systemImage: "square.stack", opensTools: true)
+            Button {
+                showingManagement = true
+            } label: {
+                Label("Manage reminders and settings", systemImage: "square.stack")
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Design.blue)
         }
     }
 
