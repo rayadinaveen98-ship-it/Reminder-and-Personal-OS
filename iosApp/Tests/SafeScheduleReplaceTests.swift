@@ -3,6 +3,7 @@ import XCTest
 @testable import ReminderOSPreview
 
 final class SafeScheduleReplaceTests: XCTestCase {
+    @MainActor
     private func temporaryStore() throws -> (IOSReminderStore, URL) {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("r3d-replace-\(UUID().uuidString)", isDirectory: true)
