@@ -271,7 +271,7 @@ class QuietPrecisionActivity : Activity() {
 
     private fun showHistory(item: ReminderRecord) {
         val events = store.recentEvents(item.id)
-        val body = if (events.isEmpty()) "No recorded actions" else events.joinToString("\\n") {
+        val body = if (events.isEmpty()) "No recorded actions" else events.joinToString("\n") {
             it.kind + " · " + date(it.atMs)
         }
         AlertDialog.Builder(this).setTitle(item.title)
