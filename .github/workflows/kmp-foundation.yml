@@ -59,11 +59,11 @@ jobs:
       - name: Compile shared Android KMP target
         run: gradle --no-daemon :shared:compileAndroidMain --stacktrace
       - name: Build independent Android native preview
-        run: gradle -p androidApp --no-daemon testDebugUnitTest assembleDebug --stacktrace
+        run: gradle -p androidApp --no-daemon testDebugUnitTest assembleDebug assembleDebugAndroidTest --stacktrace
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-reminder-v05d-debug
+          name: android-reminder-quiet-precision-r3-debug
           path: androidApp/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
