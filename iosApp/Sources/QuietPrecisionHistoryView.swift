@@ -53,11 +53,14 @@ struct QuietPrecisionHistoryView: View {
                 }
                 Section {
                     if matching.isEmpty {
-                        ContentUnavailableView(
-                            archiveOnly ? "No archived reminders" : "No matching history",
-                            systemImage: "archivebox",
-                            description: Text("Try another title, outcome or category.")
-                        )
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(archiveOnly ? "No archived reminders" :
+                                  "No matching history", systemImage: "archivebox")
+                                .font(.headline)
+                            Text("Try another title, outcome or category.")
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 20)
                     } else {
                         ForEach(displayed) { record in
                             Button {
@@ -103,9 +106,9 @@ struct QuietPrecisionHistoryView: View {
             .navigationTitle(archiveOnly ? "Archive" : "History")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $search, prompt: "Search reminder title")
-            .onChange(of: archiveOnly) { _, _ in visibleLimit = 25 }
-            .onChange(of: outcome) { _, _ in visibleLimit = 25 }
-            .onChange(of: search) { _, _ in visibleLimit = 25 }
+            .onChange(of: archiveOnly) { _ in visibleLimit = 25 }
+            .onChange(of: outcome) { _ in visibleLimit = 25 }
+            .onChange(of: search) { _ in visibleLimit = 25 }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
