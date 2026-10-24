@@ -175,7 +175,7 @@ class QuietPrecisionVisualActivity : Activity() {
             val current = entry == tab
             val cell = ui.column().apply {
                 gravity = Gravity.CENTER
-                minHeight = ui.px(57)
+                minimumHeight = ui.px(57)
                 contentDescription = entry.title + if (current) ", selected" else ""
                 isSelected = current
                 isFocusable = true
