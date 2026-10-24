@@ -231,6 +231,85 @@ final class IOSReminderStore: ObservableObject {
         }
     }
 
+    /// R3d: preserve the prior rule and all historical outcomes under Archive,
+    /// while atomically saving a new future-only schedule in one JSON snapshot.
+    /// This does NOT rewrite old slot keys or silently change completed tasks.
+    func replaceRecurring(
+        expected: IOSRecurrenceRule, title: String, dueAt: Date,
+        pattern: IOSRepeatPattern, weekdayMask: Int
+    ) async -> Bool {
+        let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let now = Date()
+        guard !clean.isEmpty, clean.count <= 200,
+              dueAt > now.addingTimeInterval(2),
+              pattern != .weekly || (1...127).contains(weekdayMask),
+              let originalIndex = recurrenceRules.firstIndex(where: { $0.id == expected.id }),
+              recurrenceRules[originalIndex] == expected, !expected.archived else {
+            lastError = "Schedule changed, or the replacement values are invalid. Reload and try again."
+            return false
+        }
+
+        let newID = UUID()
+        let replacement = IOSRecurrenceRule(
+            id: newID, title: clean, anchorAt: dueAt,
+            pattern: pattern, weekdayMask: weekdayMask,
+            paused: expected.paused, archived: false
+        )
+        var updatedRules = recurrenceRules
+        updatedRules[originalIndex].archived = true
+        updatedRules.append(replacement)
+
+        var updatedReminders = reminders
+        var updatedEvents = events
+        var oldIds: [String] = []
+        for index in updatedReminders.indices where
+            updatedReminders[index].seriesID == expected.id &&
+            !updatedReminders[index].archived {
+            updatedReminders[index].archived = true
+            updatedReminders[index].revision += 1
+            appendEvent("RULE_REPLACED", for: updatedReminders[index], list: &updatedEvents)
+            oldIds.append(identifier(updatedReminders[index].id))
+        }
+
+        if !replacement.paused {
+            var after = dueAt.addingTimeInterval(-1)
+            var generated = 0
+            while generated < 7 {
+                guard let next = IOSCalendarRecurrence.next(rule: replacement, after: after)
+                    else {
+                    lastError = "Unable to generate future occurrences. Nothing was changed."
+                    return false
+                }
+                after = next
+                if next <= now { continue }
+                let instance = IOSReminder(
+                    id: UUID(), title: clean, dueAt: next,
+                    originalDueAt: next, revision: 1,
+                    outcome: .unknown, archived: false,
+                    seriesID: newID, slotKey: IOSCalendarRecurrence.slotKey(next)
+                )
+                updatedReminders.append(instance)
+                appendEvent("CREATED", for: instance, list: &updatedEvents)
+                generated += 1
+            }
+        }
+
+        do {
+            try save(updatedReminders, updatedEvents, updatedRules)
+            center.removePendingNotificationRequests(withIdentifiers: oldIds)
+            center.removeDeliveredNotifications(withIdentifiers: oldIds)
+            await reconcile()
+            return true
+        } catch {
+            lastError = "Replacing schedule failed: \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    var archivedRules: [IOSRecurrenceRule] {
+        recurrenceRules.filter { $0.archived }
+    }
+
     func setRoutinePaused(id: UUID, paused: Bool) async {
         guard let index = recurrenceRules.firstIndex(where: { $0.id == id }),
               !recurrenceRules[index].archived,
