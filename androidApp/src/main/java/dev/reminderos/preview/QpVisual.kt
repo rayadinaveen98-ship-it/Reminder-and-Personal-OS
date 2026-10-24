@@ -111,8 +111,8 @@ internal class QpVisual(private val context: Context) {
     fun iconButton(resource: Int, description: String, onClick: () -> Unit):
         LinearLayout = row().apply {
         gravity = Gravity.CENTER
-        minWidth = px(48)
-        minHeight = px(48)
+        minimumWidth = px(48)
+        minimumHeight = px(48)
         background = RippleDrawable(ColorStateList.valueOf(tonal),
             shape(surface,12),null)
         addView(icon(resource, ink, null, 20))
