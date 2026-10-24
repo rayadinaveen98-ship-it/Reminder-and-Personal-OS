@@ -28,14 +28,19 @@ jobs:
           SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -path '*/bin/sdkmanager' | sort -V | tail -1)"
           test -n "$SDKMANAGER"
           "$SDKMANAGER" --install "platforms;android-36"
+      - name: Enable KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Capture native Today screen on clean emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
-          profile: pixel_6
-          emulator-options: -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
           script: |
             gradle -p androidApp --no-daemon connectedDebugAndroidTest \
               -Pandroid.testInstrumentationRunnerArguments.class=dev.reminderos.preview.QuietPrecisionVisualShellInstrumentedTest
@@ -45,10 +50,20 @@ jobs:
               > visual-qa-output/quiet_precision_r4a_today.png
             test -s visual-qa-output/quiet_precision_r4a_today.png
             file visual-qa-output/quiet_precision_r4a_today.png
+      - name: Upload visual failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r4b-visual-failure-diagnostics
+          path: |
+            androidApp/build/reports/androidTests/
+            androidApp/build/outputs/androidTest-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload rendered screen for design review
         uses: actions/upload-artifact@v4
         with:
-          name: quiet-precision-r4a-native-screenshot
+          name: quiet-precision-r4b-native-screenshot
           path: visual-qa-output/*.png
           if-no-files-found: error
           retention-days: 14
