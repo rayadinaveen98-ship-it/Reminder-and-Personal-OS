@@ -241,6 +241,10 @@ class QuietPrecisionManagementActivity : Activity() {
                 13f, false, secondary))
         }
         gap(body)
+        body.addView(button("Browse full History & Archive") {
+            startActivity(Intent(this, QuietPrecisionHistoryActivity::class.java))
+        })
+        gap(body)
         body.addView(button("+ New reminder", true) {
             startActivity(Intent(this, QuietPrecisionReminderEditorActivity::class.java))
         })
