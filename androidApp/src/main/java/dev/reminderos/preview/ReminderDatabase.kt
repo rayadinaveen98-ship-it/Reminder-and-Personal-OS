@@ -371,7 +371,7 @@ internal class ReminderDatabase(context: Context) :
                     cursor.getInt(6) != 0
                 )
             }
-            if (actual != expected || actual.archived) return@transaction null
+            if (actual == null || actual != expected || actual.archived) return@transaction null
 
             db.execSQL("UPDATE recurrence_rules SET archived=1,updated_at=? WHERE id=?",
                 arrayOf(now, expected.id))
