@@ -230,7 +230,8 @@ class QuietPrecisionVisualActivity : Activity() {
             setPadding(ui.px(9),ui.px(5),ui.px(9),ui.px(5))
             letterSpacing = .025f
         }
-        band.addView(tag,LinearLayout.LayoutParams(0,-2,1f))
+        band.addView(tag,LinearLayout.LayoutParams(-2,-2))
+        band.addView(View(this),LinearLayout.LayoutParams(0,1,1f))
         band.addView(ui.text(if(first!=null) time(first.dueAt) else "No upcoming time",
             12f, color=ui.muted))
         focus.addView(band)
