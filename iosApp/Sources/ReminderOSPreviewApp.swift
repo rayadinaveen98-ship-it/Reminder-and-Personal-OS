@@ -8,7 +8,7 @@ struct ReminderOSPreviewApp: App {
     @UIApplicationDelegateAdaptor(ReminderAppDelegate.self) private var delegate
 
     var body: some Scene {
-        WindowGroup { PreviewContentView() }
+        WindowGroup { QuietPrecisionHomeView() }
     }
 }
 
