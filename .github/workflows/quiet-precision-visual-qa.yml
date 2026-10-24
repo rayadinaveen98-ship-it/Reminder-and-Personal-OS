@@ -44,11 +44,13 @@ jobs:
           script: |
             gradle -p androidApp --no-daemon connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.reminderos.preview.QuietPrecisionVisualShellInstrumentedTest --stacktrace
             mkdir -p visual-qa-output
-            for filename in quiet_precision_r4a_today.png quiet_precision_r4b_editor.png quiet_precision_r4b_management.png; do
-              adb shell run-as dev.reminderos.alpha.v05d cat "files/visual-qa/$filename" > "visual-qa-output/$filename"
-              test -s "visual-qa-output/$filename"
-              file "visual-qa-output/$filename"
-            done
+            adb shell run-as dev.reminderos.alpha.v05d cat files/visual-qa/quiet_precision_r4a_today.png > visual-qa-output/quiet_precision_r4a_today.png
+            adb shell run-as dev.reminderos.alpha.v05d cat files/visual-qa/quiet_precision_r4b_editor.png > visual-qa-output/quiet_precision_r4b_editor.png
+            adb shell run-as dev.reminderos.alpha.v05d cat files/visual-qa/quiet_precision_r4b_management.png > visual-qa-output/quiet_precision_r4b_management.png
+            test -s visual-qa-output/quiet_precision_r4a_today.png
+            test -s visual-qa-output/quiet_precision_r4b_editor.png
+            test -s visual-qa-output/quiet_precision_r4b_management.png
+            file visual-qa-output/*.png
       - name: Upload visual failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
