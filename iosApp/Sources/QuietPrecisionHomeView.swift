@@ -8,6 +8,8 @@ struct QuietPrecisionHomeView: View {
     @ObservedObject private var store = IOSReminderStore.shared
     @State private var selected: Destination = .today
     @State private var showingTools = false
+    @State private var showingEditor = false
+    @State private var selectedReminder: IOSReminder?
     @State private var pendingSkip: IOSReminder?
 
     private enum Destination: String, CaseIterable {
@@ -60,6 +62,12 @@ struct QuietPrecisionHomeView: View {
         .tint(Design.blue)
         .sheet(isPresented: $showingTools) {
             PreviewContentView()
+        }
+        .sheet(isPresented: $showingEditor) {
+            QuietPrecisionReminderEditor()
+        }
+        .sheet(item: $selectedReminder) { reminder in
+            QuietPrecisionReminderDetail(reminder: reminder)
         }
         .confirmationDialog(
             "Skip this occurrence?",
@@ -194,6 +202,9 @@ struct QuietPrecisionHomeView: View {
                     .controlSize(.regular)
                     .tint(Design.blue)
                 }
+                Button("History") { selectedReminder = reminder }
+                    .font(.footnote.weight(.medium))
+                    .accessibilityIdentifier("quietReminderHistory")
             }
         }
     }
@@ -258,7 +269,7 @@ struct QuietPrecisionHomeView: View {
                     reminderCard(item)
                 }
             }
-            primaryAction("Manage reminders, archive and backup", systemImage: "square.stack")
+            primaryAction("Manage reminders, archive and backup", systemImage: "square.stack", opensTools: true)
         }
     }
 
@@ -272,9 +283,11 @@ struct QuietPrecisionHomeView: View {
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    private func primaryAction(_ label: String, systemImage: String) -> some View {
+    private func primaryAction(_ label: String, systemImage: String,
+                               opensTools: Bool = false) -> some View {
         Button {
-            showingTools = true
+            if opensTools { showingTools = true }
+            else { showingEditor = true }
         } label: {
             Label(label, systemImage: systemImage)
                 .font(.subheadline.weight(.semibold))
