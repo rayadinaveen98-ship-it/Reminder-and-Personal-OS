@@ -457,6 +457,33 @@ final class IOSReminderStore: ObservableObject {
         }
     }
 
+    /// R3e full record browser. The Today projection intentionally condenses
+    /// recurring reminders and must not be used for archive/history evidence.
+    /// An archived iOS recurrence rule hides its instances even if individual
+    /// occurrences were not marked archived by the older archiveRoutine API.
+    func historyRecords(
+        archiveOnly: Bool, query: String = "",
+        outcome: IOSReminder.Outcome? = nil,
+        now: Date = .now
+    ) -> [IOSReminder] {
+        let archivedIDs = Set(recurrenceRules.filter { $0.archived }.map(\.id))
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return reminders.filter { reminder in
+            let isArchived = reminder.archived ||
+                (reminder.seriesID.map { archivedIDs.contains($0) } ?? false)
+            let qualifies = archiveOnly ? isArchived :
+                (isArchived || reminder.outcome != .unknown || reminder.originalDueAt <= now)
+            guard qualifies else { return false }
+            guard outcome == nil || reminder.outcome == outcome else { return false }
+            return needle.isEmpty || reminder.title.localizedCaseInsensitiveContains(needle)
+        }.sorted {
+            if $0.originalDueAt != $1.originalDueAt {
+                return $0.originalDueAt > $1.originalDueAt
+            }
+            return $0.id.uuidString > $1.id.uuidString
+        }
+    }
+
     var visibleReminders: [IOSReminder] {
         let hidden = Set(recurrenceRules.filter { $0.archived }.map(\.id))
         let current = reminders.filter {

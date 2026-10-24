@@ -342,7 +342,11 @@ class QuietPrecisionActivity : Activity() {
                 13f, false, muted))
         }
         parent.addView(spacer(12))
-        parent.addView(cta("Manage reminders and archives") { openManagement() })
+        parent.addView(cta("Browse History & Archive") {
+            startActivity(Intent(this, QuietPrecisionHistoryActivity::class.java))
+        })
+        parent.addView(spacer(10))
+        parent.addView(cta("Manage reminders and schedules") { openManagement() })
     }
 
     private fun insights(parent: LinearLayout) {

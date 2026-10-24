@@ -635,6 +635,56 @@ internal class ReminderDatabase(context: Context) :
             rows
         }
 
+
+    /**
+     * Read-only history cursor for the full persisted dataset. all() is only
+     * a condensed home-list projection and is deliberately NOT used here.
+     *
+     * History includes completed, explicitly skipped, archived and overdue
+     * UNKNOWN occurrences. Archive includes only archived instances.
+     * Paging is bounded; ordering is deterministic when due dates collide.
+     */
+    @Synchronized fun historyPage(
+        archiveOnly: Boolean,
+        search: String = "",
+        outcome: String = "ALL",
+        limit: Int = 30,
+        offset: Int = 0,
+        now: Long = System.currentTimeMillis()
+    ): List<ReminderRecord> {
+        require(limit in 1..50 && offset >= 0)
+        require(outcome in setOf("ALL", "UNKNOWN", "DONE", "SKIPPED"))
+        val conditions = mutableListOf(
+            if (archiveOnly) "archived=1" else
+                "(archived=1 OR status<>'PENDING' OR original_due_at<=?)"
+        )
+        val args = mutableListOf<String>()
+        if (!archiveOnly) args.add(now.toString())
+        val cleaned = search.trim()
+        if (cleaned.isNotEmpty()) {
+            // ESCAPE avoids treating the user's '%' or '_' as SQL wildcards.
+            conditions.add("title LIKE ? ESCAPE '\\'")
+            args.add("%" + cleaned.replace("\\", "\\\\").replace("%", "\\%")
+                .replace("_", "\\_") + "%")
+        }
+        if (outcome != "ALL") {
+            conditions.add("status=?")
+            args.add(if (outcome == "UNKNOWN") "PENDING" else
+                if (outcome == "DONE") "DONE" else "SKIPPED")
+        }
+        val sql = "SELECT id,title,due_at,original_due_at,revision,status," +
+            "last_fired_revision,paused,archived,series_id,slot_key FROM reminders WHERE " +
+            conditions.joinToString(" AND ") +
+            " ORDER BY original_due_at DESC,id DESC LIMIT ? OFFSET ?"
+        args.add(limit.toString())
+        args.add(offset.toString())
+        return readableDatabase.rawQuery(sql, args.toTypedArray()).use { cursor ->
+            val records = mutableListOf<ReminderRecord>()
+            while (cursor.moveToNext()) records.add(mapReminder(cursor))
+            records
+        }
+    }
+
     /** Recheck accepted OS registrations after opening app or recovering. */
     /**
      * Safe on every app resume. Explicit Repair uses force=true, which retries
